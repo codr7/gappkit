@@ -1,0 +1,6 @@
+* write size after record id
+** add Table.buffer
+*** use for encoding records
+*** reset after use
+* load Table.recordOffsets on Open
+** load id/size, map id to offset & seek size forward
