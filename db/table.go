@@ -1,6 +1,7 @@
 package db
 
 import (
+	"bytes"
 	"encoding/gob"
 	"fmt"
 	"io"
@@ -10,24 +11,26 @@ import (
 
 type Record = map[string]interface{}
 type RecordId = uint64
-type RecordOffsetMap = map[RecordId]int64
+type RecordSize = uint32
+type Offset = uint64
+type RecordOffsetMap = map[RecordId]Offset
 	
 type Table struct {
 	root *Root
 	name string
 	columns []Column
 	nextRecordId RecordId
-	recordOffsets RecordOffsetMap
-	reader,
-	writer *os.File
+	records RecordOffsetMap
+	file *os.File
+	dataBuffer bytes.Buffer
+	encoder, dataEncoder *gob.Encoder
 	decoder *gob.Decoder
-	encoder *gob.Encoder
 }
 
 func (self *Table) Init(root *Root, name string) *Table {
 	self.root = root
 	self.name = name
-	self.recordOffsets = make(RecordOffsetMap)
+	self.records = make(RecordOffsetMap)
 	return self
 }
 
@@ -44,27 +47,19 @@ func (self *Table) NewColumn(name string) Column {
 func (self *Table) Open() error {
 	p := path.Join(self.root.path, fmt.Sprintf("%v.table", self.name))
 	var err error
-	
-	if self.writer, err = os.OpenFile(p, os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.ModePerm); err != nil {
+
+	if self.file, err = os.OpenFile(p, os.O_CREATE|os.O_APPEND|os.O_RDWR, os.ModePerm); err != nil {
 		return err
 	}
 
-	self.encoder = gob.NewEncoder(self.writer)
-	
-	if self.reader, err = os.OpenFile(p, os.O_RDONLY, os.ModePerm); err != nil {
-		return err
-	}
-
-	self.decoder = gob.NewDecoder(self.reader)
+	self.encoder = gob.NewEncoder(self.file)
+	self.dataEncoder = gob.NewEncoder(&self.dataBuffer)
+	self.decoder = gob.NewDecoder(self.file)
 	return nil
 }
 
 func (self *Table) Close() error {
-	if err := self.reader.Close(); err != nil {
-		return err
-	}
-
-	if err := self.writer.Close(); err != nil {
+	if err := self.file.Close(); err != nil {
 		return err
 	}
 	
@@ -87,17 +82,28 @@ func (self *Table) Store(id RecordId, record interface{}) error {
 		return err
 	}
 
-	offset, err := self.writer.Seek(0, io.SeekCurrent)
+	offset, err := self.file.Seek(0, io.SeekEnd)
 	
 	if err != nil {
 		return err
 	}
 
-	self.recordOffsets[id] = offset
+	self.records[id] = Offset(offset)
 
-	if err := self.encoder.Encode(data); err != nil {
+	if err := self.dataEncoder.Encode(data); err != nil {
 		return err
 	}
+
+	size := RecordSize(self.dataBuffer.Len())
 	
+	if err := self.encoder.Encode(size); err != nil {
+		return err
+	}
+
+	if _, err := self.file.Write(self.dataBuffer.Bytes()); err != nil {
+		return err
+	}
+
+	self.dataBuffer.Reset()
 	return nil
 }
