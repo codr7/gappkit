@@ -15,8 +15,7 @@ func main() {
 	
 	defer db.Close()
 	
-	var r core.Resource
-	r.Id = db.Resources.NextId()
+	r := db.NewResource()
 	r.Name = "foo"
 
 	if err := r.Store(db); err != nil {

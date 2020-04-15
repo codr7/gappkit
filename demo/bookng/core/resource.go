@@ -13,6 +13,10 @@ func (self *Resource) Store(db *DB) error {
 	return db.Resources.Store(self.Id, self)
 }
 
+func (self *DB) NewResource() *Resource {
+	return &Resource{Id: self.Resources.NextId()}
+}
+
 func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
 	r := &Resource{Id: id}
 
