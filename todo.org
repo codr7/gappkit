@@ -1,2 +1,4 @@
 * load Table.records on Open
 ** load id/size, map id to offset & seek size forward
+* add db.Index
+** add resource name index

@@ -7,7 +7,6 @@ import (
 
 type Column interface {
 	Name() string
-	Clone(val interface{}) interface{}
 	
 	Get(record interface{}) interface{}
 	Set(record interface{}, val interface{})
@@ -24,10 +23,6 @@ func (self *ColumnBase) Init(name string) *ColumnBase {
 
 func (self *ColumnBase) Name() string {
 	return self.name
-}
-
-func (_ *ColumnBase) Clone(val interface{}) interface{} {
-	return val
 }
 
 func (self *ColumnBase) Get(in interface{}) interface{} {

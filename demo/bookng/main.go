@@ -17,11 +17,26 @@ func main() {
 	root := db.NewRoot("db")
 	resources := root.NewTable("resource")
 	resources.NewColumn("Name")
-	root.Open()
+
+	if err := root.Open(); err != nil {
+		log.Fatal(err)
+	}
+	
 	defer root.Close()
 	
 	var r Resource
 	r.Id = resources.NextId()
 	r.Name = "foo"
-	resources.Store(r.Id, r)
+
+	if err := resources.Store(r.Id, &r); err != nil {
+		log.Fatal(err)
+	}
+
+	var lr Resource
+
+	if err := resources.Load(r.Id, &lr); err != nil {
+		log.Fatal(err)
+	}
+	
+	log.Printf("%v\n", lr)
 }
