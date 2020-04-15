@@ -23,9 +23,7 @@ func (self *Root) AddTable(table *Table) {
 }
 
 func (self *Root) NewTable(name string) *Table {
-	t := new(Table).Init(self, name)
-	self.AddTable(t)
-	return t
+	return new(Table).Init(self, name)
 }
 
 func (self *Root) Open() error {

@@ -1,4 +1,4 @@
-* load Table.records on Open
-** load id/size, map id to offset & seek size forward
 * add db.Index
+** copy tree from kalervos
+** file x.index
 ** add resource name index

@@ -2,39 +2,30 @@ package main
 
 import (
 	"gappkit/demo/bookng/core"
-	"gappkit/db"
 	"log"
 )
 
-type Resource struct {
-	Id db.RecordId
-	Name string
-}
-
 func main() {
-	log.Printf("Welcome to Bookng v%v", bookng.Version)
+	log.Printf("Welcome to Bookng v%v", core.Version)
+	db := core.NewDB("db")
 
-	root := db.NewRoot("db")
-	resources := root.NewTable("resource")
-	resources.NewColumn("Name")
-
-	if err := root.Open(); err != nil {
+	if err := db.Open(); err != nil {
 		log.Fatal(err)
 	}
 	
-	defer root.Close()
+	defer db.Close()
 	
-	var r Resource
-	r.Id = resources.NextId()
+	var r core.Resource
+	r.Id = db.Resources.NextId()
 	r.Name = "foo"
-
-	if err := resources.Store(r.Id, &r); err != nil {
+	
+	if err := db.Resources.Store(r.Id, &r); err != nil {
 		log.Fatal(err)
 	}
 
-	var lr Resource
+	var lr core.Resource
 
-	if err := resources.Load(r.Id, &lr); err != nil {
+	if err := db.Resources.Load(r.Id, &lr); err != nil {
 		log.Fatal(err)
 	}
 	
