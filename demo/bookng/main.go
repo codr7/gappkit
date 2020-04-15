@@ -18,14 +18,14 @@ func main() {
 	var r core.Resource
 	r.Id = db.Resources.NextId()
 	r.Name = "foo"
-	
-	if err := db.Resources.Store(r.Id, &r); err != nil {
+
+	if err := r.Store(db); err != nil {
 		log.Fatal(err)
 	}
 
-	var lr core.Resource
+	lr, err := db.LoadResource(r.Id)
 
-	if err := db.Resources.Load(r.Id, &lr); err != nil {
+	if err != nil {
 		log.Fatal(err)
 	}
 	
