@@ -1,13 +1,8 @@
-* rename ColumnBase to BasicColumn
 * move Record to db package
 ** rename to BasicRecord
 ** add Record inteface
 ** change record args to Record in Table
-* convert Table to interface
-** add BasicTable
-** rename Load to LoadRecord
-** add Load(id) Record
-** replace *Table with Table
+** add Table.Load(id) Record
 * add RecordSet
 ** binsearch slice of records/ids
 ** add Load

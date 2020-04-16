@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type QuantityTable struct {
+	db.BasicTable
+}
+
 type Quantity struct {
 	Record
 	ResourceId db.RecordId
@@ -13,7 +17,7 @@ type Quantity struct {
 }
 
 func (self *Quantity) Store() error {
-	if err := self.db.Calendar.Store(self.id, self); err != nil {
+	if err := self.db.Quantity.Store(self.id, self); err != nil {
 		return err
 	}
 
@@ -30,7 +34,7 @@ func (self *Quantity) Update(
 
 func (self *DB) NewQuantity(resource *Resource, startTime, endTime time.Time) *Quantity {
 	q := new(Quantity)
-	q.Record.Init(self, self.Calendar.NextId(), false)
+	q.Record.Init(self, self.Quantity.NextId(), false)
 	q.ResourceId = resource.id
 	return q
 }
@@ -39,7 +43,7 @@ func (self *DB) LoadQuantity(id db.RecordId) (*Quantity, error) {
 	q := new(Quantity)
 	q.Record.Init(self, id, true)
 
-	if err := self.Calendar.Load(id, q); err != nil {
+	if err := self.Quantity.Load(id, q); err != nil {
 		return nil, err
 	}
 	

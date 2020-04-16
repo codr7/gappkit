@@ -12,7 +12,19 @@ type Record = map[string]interface{}
 type RecordId = uint64
 type Offset = int64
 
-type Table struct {
+type Table interface {
+	AddColumn(column Column)
+	NewColumn(name string) Column
+	Open() error
+	Close() error
+	NextId() RecordId
+	StoreKey(id RecordId, offset Offset) error
+	StoreData(id RecordId, record interface{}) (Offset, error)
+	Store(id RecordId, record interface{}) error
+	Load(id RecordId, record interface{}) error
+}
+
+type BasicTable struct {
 	root *Root
 	name string
 	columns []Column
@@ -22,25 +34,24 @@ type Table struct {
 	keyEncoder *gob.Encoder
 }
 
-func (self *Table) Init(root *Root, name string) *Table {
+func (self *BasicTable) Init(root *Root, name string) *BasicTable {
 	self.root = root
 	self.name = name
 	self.records = make(map[RecordId]Offset)
-	root.AddTable(self)
 	return self
 }
 
-func (self *Table) AddColumn(column Column) {
+func (self *BasicTable) AddColumn(column Column) {
 	self.columns = append(self.columns, column)
 }
 
-func (self *Table) NewColumn(name string) Column {
+func (self *BasicTable) NewColumn(name string) Column {
 	c := new(BasicColumn).Init(name)
 	self.AddColumn(c)
 	return c
 }
 
-func (self *Table) Open() error {
+func (self *BasicTable) Open() error {
 	var err error
 	keyPath := path.Join(self.root.path, fmt.Sprintf("%v.key", self.name))
 	
@@ -84,7 +95,7 @@ func (self *Table) Open() error {
 	return nil
 }
 
-func (self *Table) Close() error {
+func (self *BasicTable) Close() error {
 	if err := self.keyFile.Close(); err != nil {
 		return err
 	}
@@ -96,12 +107,12 @@ func (self *Table) Close() error {
 	return nil
 }
 
-func (self *Table) NextId() RecordId {
+func (self *BasicTable) NextId() RecordId {
 	self.nextRecordId++
 	return self.nextRecordId
 }
 
-func (self *Table) StoreKey(id RecordId, offset Offset) error {
+func (self *BasicTable) StoreKey(id RecordId, offset Offset) error {
 	if err := self.keyEncoder.Encode(id); err != nil {
 		return err
 	}
@@ -113,7 +124,7 @@ func (self *Table) StoreKey(id RecordId, offset Offset) error {
 	return nil
 }
 
-func (self *Table) StoreData(id RecordId, record interface{}) (Offset, error) {
+func (self *BasicTable) StoreData(id RecordId, record interface{}) (Offset, error) {
 	data := make(Record)
 
 	for _, c := range self.columns {
@@ -136,7 +147,7 @@ func (self *Table) StoreData(id RecordId, record interface{}) (Offset, error) {
 	return offset, nil
 }
 
-func (self *Table) Store(id RecordId, record interface{}) error {
+func (self *BasicTable) Store(id RecordId, record interface{}) error {
 	offset, err := self.StoreData(id, record)
 
 	if err != nil {
@@ -146,7 +157,7 @@ func (self *Table) Store(id RecordId, record interface{}) error {
 	return self.StoreKey(id, offset)
 }
 
-func (self *Table) Load(id RecordId, record interface{}) error {
+func (self *BasicTable) Load(id RecordId, record interface{}) error {
 	offset, ok := self.records[id]
 
 	if !ok {

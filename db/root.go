@@ -6,7 +6,7 @@ import (
 
 type Root struct {
 	path string
-	tables []*Table
+	tables []Table
 }
 
 func NewRoot(path string) *Root {
@@ -18,12 +18,8 @@ func (self *Root) Init(path string) *Root {
 	return self
 }
 
-func (self *Root) AddTable(table *Table) {
+func (self *Root) AddTable(table Table) {
 	self.tables = append(self.tables, table)
-}
-
-func (self *Root) NewTable(name string) *Table {
-	return new(Table).Init(self, name)
 }
 
 func (self *Root) Open() error {

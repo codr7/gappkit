@@ -5,6 +5,10 @@ import (
 	"time"
 )
 
+type ResourceTable struct {
+	db.BasicTable
+}
+
 type Resource struct {
 	Record
 	Name string
@@ -17,7 +21,7 @@ func (self *Resource) Store() error {
 		}
 	}
 	
-	if err := self.db.Resources.Store(self.id, self); err != nil {
+	if err := self.db.Resource.Store(self.id, self); err != nil {
 		return err
 	}
 
@@ -47,7 +51,7 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 
 func (self *DB) NewResource() *Resource {
 	r := new(Resource)
-	r.Record.Init(self, self.Resources.NextId(), false)
+	r.Record.Init(self, self.Resource.NextId(), false)
 	return r
 }
 
@@ -55,7 +59,7 @@ func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
 	r := new(Resource)
 	r.Record.Init(self, id, true)
 	
-	if err := self.Resources.Load(id, r); err != nil {
+	if err := self.Resource.Load(id, r); err != nil {
 		return nil, err
 	}
 	

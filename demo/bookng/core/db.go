@@ -6,23 +6,25 @@ import (
 
 type DB struct {
 	db.Root
-	Calendar db.Table
-	Resources db.Table
+	Quantity QuantityTable
+	Resource ResourceTable
 }
 
 func NewDB(path string) *DB {
 	self := new(DB)
 	self.Root.Init(path)
 
-	self.Calendar.Init(&self.Root, "calendar")
-	self.Calendar.NewColumn("ResourceId")
-	self.Calendar.NewColumn("StartTime")
-	self.Calendar.NewColumn("EndTime")
-	self.Calendar.NewColumn("Total")
-	self.Calendar.NewColumn("Available")
+	self.Quantity.Init(&self.Root, "quantity")
+	self.Quantity.NewColumn("ResourceId")
+	self.Quantity.NewColumn("StartTime")
+	self.Quantity.NewColumn("EndTime")
+	self.Quantity.NewColumn("Total")
+	self.Quantity.NewColumn("Available")
+	self.AddTable(&self.Quantity)
 
-	self.Resources.Init(&self.Root, "resource")
-	self.Resources.NewColumn("Name")
+	self.Resource.Init(&self.Root, "resource")
+	self.Resource.NewColumn("Name")
+	self.AddTable(&self.Resource)
 
 	return self
 }
