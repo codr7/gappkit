@@ -12,20 +12,20 @@ type Column interface {
 	Set(record interface{}, val interface{})
 }
 
-type ColumnBase struct {
+type BasicColumn struct {
 	name string
 }
 
-func (self *ColumnBase) Init(name string) *ColumnBase {
+func (self *BasicColumn) Init(name string) *BasicColumn {
 	self.name = name
 	return self
 }
 
-func (self *ColumnBase) Name() string {
+func (self *BasicColumn) Name() string {
 	return self.name
 }
 
-func (self *ColumnBase) Get(in interface{}) interface{} {
+func (self *BasicColumn) Get(in interface{}) interface{} {
 	s := reflect.ValueOf(in)
 
 	if !s.IsValid() {
@@ -41,7 +41,7 @@ func (self *ColumnBase) Get(in interface{}) interface{} {
 	return f.Interface()
 }
 
-func (self *ColumnBase) Set(out interface{}, val interface{}) {
+func (self *BasicColumn) Set(out interface{}, val interface{}) {
 	s := reflect.ValueOf(out)
 
 	if !s.IsValid() {

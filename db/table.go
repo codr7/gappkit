@@ -35,7 +35,7 @@ func (self *Table) AddColumn(column Column) {
 }
 
 func (self *Table) NewColumn(name string) Column {
-	c := new(ColumnBase).Init(name)
+	c := new(BasicColumn).Init(name)
 	self.AddColumn(c)
 	return c
 }
