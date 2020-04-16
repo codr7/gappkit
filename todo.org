@@ -1,5 +1,4 @@
-* add Quantity
-* add Calendar
+* add Resource.UpdateQuantity(startTime, endTime, total, available)
 * add Booking
 * --
 * add db.Index
