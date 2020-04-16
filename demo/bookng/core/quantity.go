@@ -28,7 +28,7 @@ type Quantity struct {
 }
 
 func (self *Quantity) Store(db *DB) error {
-	if err := db.Quantity.Store(self.Id(), self); err != nil {
+	if err := db.Quantity.Store(self); err != nil {
 		return err
 	}
 

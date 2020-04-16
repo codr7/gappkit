@@ -32,13 +32,12 @@ func (self *Resource) Store(db *DB) error {
 		}
 	}
 	
-	if err := db.Resource.Store(self.Id(), self); err != nil {
+	if err := db.Resource.Store(self); err != nil {
 		return err
 	}
 
 	return nil
 }
-
 
 func (self *Resource) UpdateQuantity(db *DB, startTime, endTime time.Time, total, available int) error {
 	var in, out []*Quantity

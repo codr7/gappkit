@@ -21,9 +21,7 @@ type Table interface {
 	NewColumn(name string) Column
 	NextId() RecordId
 	Open() error
-	StoreKey(id RecordId, offset Offset) error
-	StoreData(id RecordId, record Record) (Offset, error)
-	Store(id RecordId, record Record) error
+	Store(record Record) error
 }
 
 type BasicTable struct {
@@ -114,7 +112,7 @@ func (self *BasicTable) NextId() RecordId {
 	return self.nextRecordId
 }
 
-func (self *BasicTable) StoreKey(id RecordId, offset Offset) error {
+func (self *BasicTable) storeKey(id RecordId, offset Offset) error {
 	if err := self.keyEncoder.Encode(id); err != nil {
 		return err
 	}
@@ -126,7 +124,7 @@ func (self *BasicTable) StoreKey(id RecordId, offset Offset) error {
 	return nil
 }
 
-func (self *BasicTable) StoreData(id RecordId, record Record) (Offset, error) {
+func (self *BasicTable) storeData(record Record) (Offset, error) {
 	data := make(RecordData)
 
 	for _, c := range self.columns {
@@ -139,7 +137,7 @@ func (self *BasicTable) StoreData(id RecordId, record Record) (Offset, error) {
 		return -1, err
 	}
 
-	self.records[id] = offset
+	self.records[record.Id()] = offset
 	encoder := gob.NewEncoder(self.dataFile)
 	
 	if err := encoder.Encode(data); err != nil {
@@ -149,14 +147,14 @@ func (self *BasicTable) StoreData(id RecordId, record Record) (Offset, error) {
 	return offset, nil
 }
 
-func (self *BasicTable) Store(id RecordId, record Record) error {
-	offset, err := self.StoreData(id, record)
+func (self *BasicTable) Store(record Record) error {
+	offset, err := self.storeData(record)
 
 	if err != nil {
 		return err
 	}
 
-	return self.StoreKey(id, offset)
+	return self.storeKey(record.Id(), offset)
 }
 
 func (self *BasicTable) Exists(id RecordId) bool {
