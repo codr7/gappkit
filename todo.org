@@ -1,17 +1,12 @@
-* move Record to db package
-** rename to BasicRecord
-** add Record inteface
-** change record args to Record in Table
-** add Table.Load(id) Record
-* add RecordSet
-** binsearch slice of records/ids
-** add Load
+* add Resource.Categories
+** add self automagically
 * finish Quantity.Update()
+** loop categories recursively (skip self)
 * add Booking
 * --
 * add db.Index
 ** sorted Slice
 *** copy gfoo.Record
 ** filer x.index
-** add ResourceCalendar index
+** add ResourceQuantity index
 *** ResourceId/StartTime

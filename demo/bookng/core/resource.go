@@ -9,9 +9,9 @@ type ResourceTable struct {
 	db.BasicTable
 }
 
-func (self *ResourceTable) Load(id db.RecordId) (interface{}, error) {
+func (self *ResourceTable) Load(id db.RecordId) (db.Record, error) {
 	r := new(Resource)
-	r.Record.Init(id, true)
+	r.BasicRecord.Init(id)
 
 	if err := self.LoadRecord(id, r); err != nil {
 		return nil, err
@@ -21,22 +21,21 @@ func (self *ResourceTable) Load(id db.RecordId) (interface{}, error) {
 }
 
 type Resource struct {
-	Record
+	db.BasicRecord
 	Name string
 }
 
 func (self *Resource) Store(db *DB) error {
-	if !self.exists {
+	if !db.Resource.Exists(self.Id()) {
 		if err := db.NewQuantity(self, MinTime, MaxTime).Store(db); err != nil {
 			return err
 		}
 	}
 	
-	if err := db.Resource.Store(self.id, self); err != nil {
+	if err := db.Resource.Store(self.Id(), self); err != nil {
 		return err
 	}
 
-	self.exists = true
 	return nil
 }
 
@@ -62,6 +61,6 @@ func (self *Resource) UpdateQuantity(db *DB, startTime, endTime time.Time, total
 
 func (self *DB) NewResource() *Resource {
 	r := new(Resource)
-	r.Record.Init(self.Resource.NextId(), false)
+	r.BasicRecord.Init(self.Resource.NextId())
 	return r
 }

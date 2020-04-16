@@ -8,21 +8,22 @@ import (
 	"path"
 )
 
-type Record = map[string]interface{}
 type RecordId = uint64
+type RecordData = map[string]interface{}
 type Offset = int64
 
 type Table interface {
 	AddColumn(column Column)
-	NewColumn(name string) Column
-	Open() error
 	Close() error
+	Exists(id RecordId) bool
+	Load(id RecordId) (Record, error)
+	LoadRecord(id RecordId, record Record) error
+	NewColumn(name string) Column
 	NextId() RecordId
+	Open() error
 	StoreKey(id RecordId, offset Offset) error
-	StoreData(id RecordId, record interface{}) (Offset, error)
-	Store(id RecordId, record interface{}) error
-	LoadRecord(id RecordId, record interface{}) error
-	Load(id RecordId) (interface{}, error)
+	StoreData(id RecordId, record Record) (Offset, error)
+	Store(id RecordId, record Record) error
 }
 
 type BasicTable struct {
@@ -125,8 +126,8 @@ func (self *BasicTable) StoreKey(id RecordId, offset Offset) error {
 	return nil
 }
 
-func (self *BasicTable) StoreData(id RecordId, record interface{}) (Offset, error) {
-	data := make(Record)
+func (self *BasicTable) StoreData(id RecordId, record Record) (Offset, error) {
+	data := make(RecordData)
 
 	for _, c := range self.columns {
 		data[c.Name()] = c.Get(record)
@@ -148,7 +149,7 @@ func (self *BasicTable) StoreData(id RecordId, record interface{}) (Offset, erro
 	return offset, nil
 }
 
-func (self *BasicTable) Store(id RecordId, record interface{}) error {
+func (self *BasicTable) Store(id RecordId, record Record) error {
 	offset, err := self.StoreData(id, record)
 
 	if err != nil {
@@ -158,7 +159,12 @@ func (self *BasicTable) Store(id RecordId, record interface{}) error {
 	return self.StoreKey(id, offset)
 }
 
-func (self *BasicTable) LoadRecord(id RecordId, record interface{}) error {
+func (self *BasicTable) Exists(id RecordId) bool {
+	_, ok := self.records[id]
+	return ok
+}
+
+func (self *BasicTable) LoadRecord(id RecordId, record Record) error {
 	offset, ok := self.records[id]
 
 	if !ok {
@@ -169,7 +175,7 @@ func (self *BasicTable) LoadRecord(id RecordId, record interface{}) error {
 		return err
 	}
 
-	data := make(Record)
+	data := make(RecordData)
 	decoder := gob.NewDecoder(self.dataFile)
 	
 	if err := decoder.Decode(&data); err != nil {
