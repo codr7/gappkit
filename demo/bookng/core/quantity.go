@@ -21,6 +21,13 @@ func (self *Quantity) Store() error {
 	return nil
 }
 
+func (self *Quantity) Update(
+	startTime, endTime time.Time,
+	total, available int,
+	out []*Quantity) ([]*Quantity, error) {
+	return out, nil
+}
+
 func (self *DB) NewQuantity(resource *Resource, startTime, endTime time.Time) *Quantity {
 	q := new(Quantity)
 	q.Record.Init(self, self.Calendar.NextId(), false)

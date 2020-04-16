@@ -1,7 +1,9 @@
-* add Resource.UpdateQuantity(startTime, endTime, total, available)
+* finish Quantity.Update()
 * add Booking
 * --
 * add db.Index
-** copy tree from kalervos
-** file x.index
-** add resource name index
+** sorted Slice
+*** copy gfoo.Record
+** filer x.index
+** add ResourceCalendar index
+*** ResourceId/StartTime

@@ -2,6 +2,7 @@ package core
 
 import (
 	"gappkit/db"
+	"time"
 )
 
 type Resource struct {
@@ -21,6 +22,26 @@ func (self *Resource) Store() error {
 	}
 
 	self.exists = true
+	return nil
+}
+
+
+func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, available int) error {
+	var in, out []*Quantity
+	var err error
+	
+	for _, q := range in {
+		if out, err = q.Update(startTime, endTime, total, available, out); err != nil {
+			return err
+		}
+	}
+
+	for _, q := range out {
+		if err = q.Store(); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
