@@ -5,13 +5,11 @@ import (
 )
 
 type Record struct {
-	db *DB
 	id db.RecordId
 	exists bool
 }
 
-func (self *Record) Init(db *DB, id db.RecordId, exists bool) {
-	self.db = db
+func (self *Record) Init(id db.RecordId, exists bool) {
 	self.id = id
 	self.exists = exists
 }

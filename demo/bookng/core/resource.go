@@ -9,19 +9,30 @@ type ResourceTable struct {
 	db.BasicTable
 }
 
+func (self *ResourceTable) Load(id db.RecordId) (interface{}, error) {
+	r := new(Resource)
+	r.Record.Init(id, true)
+
+	if err := self.LoadRecord(id, r); err != nil {
+		return nil, err
+	}
+	
+	return r, nil
+}
+
 type Resource struct {
 	Record
 	Name string
 }
 
-func (self *Resource) Store() error {
+func (self *Resource) Store(db *DB) error {
 	if !self.exists {
-		if err := self.db.NewQuantity(self, MinTime, MaxTime).Store(); err != nil {
+		if err := db.NewQuantity(self, MinTime, MaxTime).Store(db); err != nil {
 			return err
 		}
 	}
 	
-	if err := self.db.Resource.Store(self.id, self); err != nil {
+	if err := db.Resource.Store(self.id, self); err != nil {
 		return err
 	}
 
@@ -30,7 +41,7 @@ func (self *Resource) Store() error {
 }
 
 
-func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, available int) error {
+func (self *Resource) UpdateQuantity(db *DB, startTime, endTime time.Time, total, available int) error {
 	var in, out []*Quantity
 	var err error
 	
@@ -41,7 +52,7 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 	}
 
 	for _, q := range out {
-		if err = q.Store(); err != nil {
+		if err = q.Store(db); err != nil {
 			return err
 		}
 	}
@@ -51,17 +62,6 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 
 func (self *DB) NewResource() *Resource {
 	r := new(Resource)
-	r.Record.Init(self, self.Resource.NextId(), false)
+	r.Record.Init(self.Resource.NextId(), false)
 	return r
-}
-
-func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
-	r := new(Resource)
-	r.Record.Init(self, id, true)
-	
-	if err := self.Resource.Load(id, r); err != nil {
-		return nil, err
-	}
-	
-	return r, nil
 }

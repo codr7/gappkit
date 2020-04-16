@@ -21,7 +21,8 @@ type Table interface {
 	StoreKey(id RecordId, offset Offset) error
 	StoreData(id RecordId, record interface{}) (Offset, error)
 	Store(id RecordId, record interface{}) error
-	Load(id RecordId, record interface{}) error
+	LoadRecord(id RecordId, record interface{}) error
+	Load(id RecordId) (interface{}, error)
 }
 
 type BasicTable struct {
@@ -157,7 +158,7 @@ func (self *BasicTable) Store(id RecordId, record interface{}) error {
 	return self.StoreKey(id, offset)
 }
 
-func (self *BasicTable) Load(id RecordId, record interface{}) error {
+func (self *BasicTable) LoadRecord(id RecordId, record interface{}) error {
 	offset, ok := self.records[id]
 
 	if !ok {

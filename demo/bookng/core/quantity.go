@@ -9,6 +9,17 @@ type QuantityTable struct {
 	db.BasicTable
 }
 
+func (self *QuantityTable) Load(id db.RecordId) (interface{}, error) {
+	q := new(Quantity)
+	q.Record.Init(id, true)
+
+	if err := self.LoadRecord(id, q); err != nil {
+		return nil, err
+	}
+	
+	return q, nil
+}
+
 type Quantity struct {
 	Record
 	ResourceId db.RecordId
@@ -16,8 +27,8 @@ type Quantity struct {
 	Total, Available int
 }
 
-func (self *Quantity) Store() error {
-	if err := self.db.Quantity.Store(self.id, self); err != nil {
+func (self *Quantity) Store(db *DB) error {
+	if err := db.Quantity.Store(self.id, self); err != nil {
 		return err
 	}
 
@@ -34,18 +45,7 @@ func (self *Quantity) Update(
 
 func (self *DB) NewQuantity(resource *Resource, startTime, endTime time.Time) *Quantity {
 	q := new(Quantity)
-	q.Record.Init(self, self.Quantity.NextId(), false)
+	q.Record.Init(self.Quantity.NextId(), false)
 	q.ResourceId = resource.id
 	return q
-}
-
-func (self *DB) LoadQuantity(id db.RecordId) (*Quantity, error) {
-	q := new(Quantity)
-	q.Record.Init(self, id, true)
-
-	if err := self.Quantity.Load(id, q); err != nil {
-		return nil, err
-	}
-	
-	return q, nil
 }
