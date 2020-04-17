@@ -13,18 +13,7 @@ type DB struct {
 func NewDB(path string) *DB {
 	self := new(DB)
 	self.Root.Init(path)
-
-	self.Quantity.Init(&self.Root, "quantity")
-	self.Quantity.NewColumn("ResourceId")
-	self.Quantity.NewColumn("StartTime")
-	self.Quantity.NewColumn("EndTime")
-	self.Quantity.NewColumn("Total")
-	self.Quantity.NewColumn("Available")
-	self.AddTable(&self.Quantity)
-
-	self.Resource.Init(&self.Root, "resource")
-	self.Resource.NewColumn("Name")
-	self.AddTable(&self.Resource)
-
+	self.Quantity.Init(&self.Root)
+	self.Resource.Init(&self.Root)
 	return self
 }

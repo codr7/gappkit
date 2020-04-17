@@ -9,6 +9,17 @@ type QuantityTable struct {
 	db.BasicTable
 }
 
+func (self *QuantityTable) Init(root *db.Root) db.Table {
+	self.BasicTable.Init(root, "quantity")
+	self.NewColumn("ResourceId")
+	self.NewColumn("StartTime")
+	self.NewColumn("EndTime")
+	self.NewColumn("Total")
+	self.NewColumn("Available")
+	root.AddTable(self)
+	return self
+}
+
 func (self *QuantityTable) Load(id db.RecordId) (db.Record, error) {
 	q := new(Quantity)
 	q.BasicRecord.Init(id)

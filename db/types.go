@@ -6,5 +6,6 @@ import (
 )
 
 func init() {
+	gob.Register(RecordSet{})
 	gob.Register(time.Now())
 }

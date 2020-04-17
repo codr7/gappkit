@@ -25,13 +25,14 @@ type Table interface {
 }
 
 type BasicTable struct {
-	root *Root
-	name string
 	columns []Column
-	nextRecordId RecordId
-	records map[RecordId]Offset
-	keyFile, dataFile *os.File
+	dataFile *os.File
 	keyEncoder *gob.Encoder
+	keyFile *os.File
+	name string
+	nextRecordId RecordId
+	root *Root
+	records map[RecordId]Offset
 }
 
 func (self *BasicTable) Init(root *Root, name string) *BasicTable {

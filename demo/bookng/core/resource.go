@@ -9,6 +9,14 @@ type ResourceTable struct {
 	db.BasicTable
 }
 
+func (self *ResourceTable) Init(root *db.Root) db.Table {
+	self.BasicTable.Init(root, "resource")
+	self.NewColumn("Categories")
+	self.NewColumn("Name")
+	root.AddTable(self)
+	return self
+}
+
 func (self *ResourceTable) Load(id db.RecordId) (db.Record, error) {
 	r := new(Resource)
 	r.BasicRecord.Init(id)
@@ -22,6 +30,7 @@ func (self *ResourceTable) Load(id db.RecordId) (db.Record, error) {
 
 type Resource struct {
 	db.BasicRecord
+	Categories db.RecordSet
 	Name string
 }
 
@@ -61,5 +70,6 @@ func (self *Resource) UpdateQuantity(db *DB, startTime, endTime time.Time, total
 func (self *DB) NewResource() *Resource {
 	r := new(Resource)
 	r.BasicRecord.Init(self.Resource.NextId())
+	r.Categories.Add(r.Id())
 	return r
 }
