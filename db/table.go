@@ -13,15 +13,15 @@ type RecordData = map[string]interface{}
 type Offset = int64
 
 type Table interface {
-	AddColumn(column Column)
+	AddColumn(Column)
+	AddIndex(*Index)
 	Close() error
-	Exists(id RecordId) bool
-	Load(id RecordId) (Record, error)
-	LoadRecord(id RecordId, record Record) error
-	NewColumn(name string) Column
+	Exists(RecordId) bool
+	Load(RecordId) (Record, error)
+	LoadRecord(RecordId, Record) error
 	NextId() RecordId
 	Open() error
-	Store(record Record) error
+	Store(Record) error
 }
 
 type BasicTable struct {
@@ -33,6 +33,7 @@ type BasicTable struct {
 	nextRecordId RecordId
 	root *Root
 	records map[RecordId]Offset
+	indexes []*Index
 }
 
 func (self *BasicTable) Init(root *Root, name string) *BasicTable {
@@ -46,10 +47,8 @@ func (self *BasicTable) AddColumn(column Column) {
 	self.columns = append(self.columns, column)
 }
 
-func (self *BasicTable) NewColumn(name string) Column {
-	c := new(BasicColumn).Init(name)
-	self.AddColumn(c)
-	return c
+func (self *BasicTable) AddIndex(index *Index) {
+	self.indexes = append(self.indexes, index)
 }
 
 func (self *BasicTable) Open() error {
@@ -93,6 +92,12 @@ func (self *BasicTable) Open() error {
 		return err
 	}
 
+	for _, index := range self.indexes {
+		if err = index.Open(); err != nil {
+			return err
+		}
+	}
+	
 	return nil
 }
 
@@ -103,6 +108,12 @@ func (self *BasicTable) Close() error {
 
 	if err := self.dataFile.Close(); err != nil {
 		return err
+	}
+
+	for _, index := range self.indexes {
+		if err := index.Close(); err != nil {
+			return err
+		}
 	}
 
 	return nil

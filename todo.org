@@ -1,9 +1,6 @@
+* add Index.Add/Remove
+** call from Table
 * finish Quantity.Update()
 ** loop categories recursively (skip self)
-* add db.Index
-** sorted Slice
-*** copy gfoo.Record
-** filer x.index
-** add ResourceQuantity index
-*** ResourceId/StartTime
-* add Booking
+** extract tests from main
+* add transactions

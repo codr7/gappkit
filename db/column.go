@@ -7,9 +7,9 @@ import (
 
 type Column interface {
 	Name() string
-	
-	Get(record interface{}) interface{}
-	Set(record interface{}, val interface{})
+	Compare(x, y interface{}) Order
+	Get(record Record) interface{}
+	Set(record Record, val interface{})
 }
 
 type BasicColumn struct {
@@ -25,7 +25,7 @@ func (self *BasicColumn) Name() string {
 	return self.name
 }
 
-func (self *BasicColumn) Get(in interface{}) interface{} {
+func (self *BasicColumn) Get(in Record) interface{} {
 	s := reflect.ValueOf(in)
 
 	if !s.IsValid() {
@@ -41,7 +41,7 @@ func (self *BasicColumn) Get(in interface{}) interface{} {
 	return f.Interface()
 }
 
-func (self *BasicColumn) Set(out interface{}, val interface{}) {
+func (self *BasicColumn) Set(out Record, val interface{}) {
 	s := reflect.ValueOf(out)
 
 	if !s.IsValid() {

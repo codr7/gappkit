@@ -9,8 +9,30 @@ func (self *RecordSet) Add(id RecordId) {
 	self.Insert(i, id)
 }
 
-func (self *RecordSet) Find(id RecordId) (int, bool) {
-	min, max := 0, len(self.Items)
+func (self RecordSet) Compare(other RecordSet) Order {
+	max := other.Len()-1
+	var i int
+	var id RecordId
+	
+	for i, id = range self.Items {
+		if i > max {
+			return Gt
+		}
+
+		if result := CompareRecordId(id, other.Items[i]); result != Eq {
+			return result
+		}
+	}
+
+	if max > i {
+		return Lt
+	}
+
+	return Eq
+}
+
+func (self RecordSet) Find(id RecordId) (int, bool) {
+	min, max := 0, self.Len()
 
 	for min < max {
 		i := (min+max) / 2
@@ -29,7 +51,7 @@ func (self *RecordSet) Find(id RecordId) (int, bool) {
 }
 
 func (self *RecordSet) Insert(i int, id RecordId) {
-	l := len(self.Items)
+	l := self.Len()
 	
 	if i == l {
 		self.Items = append(self.Items, id)
@@ -42,6 +64,10 @@ func (self *RecordSet) Insert(i int, id RecordId) {
 	}
 }
 
+func (self RecordSet) Len() int {
+	return len(self.Items)
+}
+
 func (self *RecordSet) Remove(id RecordId) bool {
 	i, ok := self.Find(id)	
 
@@ -49,7 +75,7 @@ func (self *RecordSet) Remove(id RecordId) bool {
 		return false
 	}
 	
-	l := len(self.Items)
+	l := self.Len()
 	copy(self.Items[i:], self.Items[i+1:])
 	self.Items = self.Items[:l-1]	
 	return true

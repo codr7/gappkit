@@ -11,8 +11,6 @@ type ResourceTable struct {
 
 func (self *ResourceTable) Init(root *db.Root) db.Table {
 	self.BasicTable.Init(root, "resource")
-	self.NewColumn("Categories")
-	self.NewColumn("Name")
 	root.AddTable(self)
 	return self
 }
@@ -49,17 +47,19 @@ func (self *Resource) Store(db *DB) error {
 }
 
 func (self *Resource) UpdateQuantity(db *DB, startTime, endTime time.Time, total, available int) error {
-	var in, out []*Quantity
-	var err error
+	in := db.QuantityIndex.FindLower(self.Id(), startTime)
+	var out []*Quantity
 	
-	for _, q := range in {
-		if out, err = q.Update(startTime, endTime, total, available, out); err != nil {
+	for in.Next() && in.Key()[1].(time.Time).Before(endTime) {
+		q, err := db.Quantity.Load(in.Value()[0])
+		
+		if out, err = q.(*Quantity).Update(startTime, endTime, total, available, out); err != nil {
 			return err
 		}
 	}
 
 	for _, q := range out {
-		if err = q.Store(db); err != nil {
+		if err := q.Store(db); err != nil {
 			return err
 		}
 	}
