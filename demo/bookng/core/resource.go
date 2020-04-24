@@ -50,8 +50,8 @@ func (self *Resource) UpdateQuantity(db *DB, startTime, endTime time.Time, total
 	in := db.QuantityIndex.FindLower(self.Id(), startTime)
 	var out []*Quantity
 	
-	for in.Next() && in.Key()[1].(time.Time).Before(endTime) {
-		q, err := db.Quantity.Load(in.Value()[0])
+	for in.Next() && in.Key(1).(time.Time).Before(endTime) {
+		q, err := db.Quantity.Load(in.Value())
 		
 		if out, err = q.(*Quantity).Update(startTime, endTime, total, available, out); err != nil {
 			return err

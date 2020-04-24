@@ -19,7 +19,6 @@ type Index struct {
 	unique bool
 }
 
-type IndexAction = func(key IndexKey, value RecordId) error
 type IndexCompare = func(x, y IndexKey) Order
 type IndexKey []interface{}
 type IndexValue []RecordId
@@ -32,8 +31,10 @@ type IndexNode struct {
 }
 
 type IndexIter struct {
-	node *IndexNode
+	current *IndexNode
+	next *IndexNode
 	stack []*IndexNode
+	valueIndex int
 }
 
 func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Column) {
@@ -118,10 +119,6 @@ func (self *Index) AddNode(key IndexKey, value RecordId) bool {
 	self.records, ok = self.addNode(self.records, key, value)
 	self.records.red = false
 	return ok
-}
-
-func (self *Index) Do(action IndexAction) error {
-	return self.records.Do(action)
 }
 
 func (self *Index) Find(key IndexKey) IndexValue {
@@ -271,26 +268,6 @@ func (self *Index) findLowerNode(node *IndexNode, key IndexKey) *IndexNode {
 	return nil
 }
 
-func (self *IndexNode) Do(action IndexAction) error {
-	if self != nil {
-		if err := self.left.Do(action); err != nil {
-			return err
-		}
-		
-		for _, v := range self.value {
-			if err := action(self.key, v); err != nil {
-				return err
-			}
-		}
-		
-		if err := self.right.Do(action); err != nil {
-			return err
-		}
-	}
-	
-	return nil
-}
-
 func (self *IndexNode) fix() *IndexNode {
 	if (self.right.isRed()) {
 		self = self.rotl()
@@ -362,42 +339,39 @@ func (self *IndexNode) rotr() *IndexNode {
 }
 
 func NewIndexIter(node *IndexNode) *IndexIter {
-	self := new(IndexIter)
-
-	if node !=nil {
-		self.Append(node)
-	}
-
-	return self
+	return &IndexIter{next: node}
 }
 
-func (self *IndexIter) Append(node *IndexNode) {
-	if node.right != nil {
-		self.Append(node.right)
-	}
-
-	self.stack = append(self.stack, node)
-
-	if node.left != nil {
-		self.Append(node.left)
-	}
-}
-
-func (self *IndexIter) Key() IndexKey {
-	return self.node.key
+func (self *IndexIter) Key(i int) interface{} {
+	return self.current.key[i]
 }
 
 func (self *IndexIter) Next() bool {
-	i := len(self.stack)-1
-
-	if i == -1 {
-		return false
+	self.valueIndex++
+	
+	if self.current == nil || self.valueIndex >= len(self.current.value) {
+		for self.next != nil {
+			self.stack = append(self.stack, self.next)
+			self.next = self.next.left
+		}
+		
+		i := len(self.stack)-1
+		
+		if i == -1 {
+			self.current = nil
+			return false
+		}
+		
+		var n *IndexNode
+		n, self.stack = self.stack[i], self.stack[:i]
+		self.next = n.right
+		self.current = n
+		self.valueIndex = 0
 	}
-
-	self.node, self.stack = self.stack[i], self.stack[:i]
+	
 	return true
 }
 
-func (self *IndexIter) Value() IndexValue {
-	return self.node.value
+func (self *IndexIter) Value() RecordId {
+	return self.current.value[self.valueIndex]
 }

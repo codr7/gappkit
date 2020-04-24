@@ -3,6 +3,7 @@
 ** extract tests from main
 * add db transactions
 * add compiled templates
-** use <exec>/<echo> tags
-*** allow empty tag
+** use <go> tag
+*** allow singleton tag
 *** add Echo function to generated code
+<go Echo("foo %v", 42)/>
