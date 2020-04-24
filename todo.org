@@ -1,6 +1,8 @@
-* add Index.Add/Remove
-** call from Table
 * finish Quantity.Update()
 ** loop categories recursively (skip self)
 ** extract tests from main
-* add transactions
+* add db transactions
+* add compiled templates
+** use <exec>/<echo> tags
+*** allow empty tag
+*** add Echo function to generated code

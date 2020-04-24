@@ -9,7 +9,7 @@ import (
 )
 
 type RecordId = uint64
-type RecordData = map[string]interface{}
+type Fields = map[string]interface{}
 type Offset = int64
 
 type Table interface {
@@ -137,10 +137,10 @@ func (self *BasicTable) storeKey(id RecordId, offset Offset) error {
 }
 
 func (self *BasicTable) storeData(record Record) (Offset, error) {
-	data := make(RecordData)
+	fields := make(Fields)
 
 	for _, c := range self.columns {
-		data[c.Name()] = c.Get(record)
+		fields[c.Name()] = c.Get(record)
 	}
 
 	offset, err := self.dataFile.Seek(0, io.SeekEnd)
@@ -149,13 +149,27 @@ func (self *BasicTable) storeData(record Record) (Offset, error) {
 		return -1, err
 	}
 
-	self.records[record.Id()] = offset
+	id := record.Id()
+
+	if prev, err := self.loadFields(id); err != nil {
+		return -1, err
+	} else if prev != nil {
+		for _, ix := range self.indexes {
+			ix.Remove(prev, id)
+		}
+	}
+	
+	self.records[id] = offset
 	encoder := gob.NewEncoder(self.dataFile)
 	
-	if err := encoder.Encode(data); err != nil {
+	if err := encoder.Encode(fields); err != nil {
 		return -1, err
 	}
 
+	for _, ix := range self.indexes {
+		ix.Add(fields, id)
+	}
+	
 	return offset, nil
 }
 
@@ -166,7 +180,11 @@ func (self *BasicTable) Store(record Record) error {
 		return err
 	}
 
-	return self.storeKey(record.Id(), offset)
+	if err = self.storeKey(record.Id(), offset); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (self *BasicTable) Exists(id RecordId) bool {
@@ -174,26 +192,40 @@ func (self *BasicTable) Exists(id RecordId) bool {
 	return ok
 }
 
-func (self *BasicTable) LoadRecord(id RecordId, record Record) error {
+func (self *BasicTable) loadFields(id RecordId) (Fields, error) {
 	offset, ok := self.records[id]
 
 	if !ok {
-		return fmt.Errorf("Record not found: %v/%v", self.name, id)
+		return nil, nil
+	}
+	
+	if _, err := self.dataFile.Seek(offset, io.SeekStart); err != nil {
+		return nil, err
+	}
+	
+	decoder := gob.NewDecoder(self.dataFile)
+	fields := make(Fields)
+	
+	if err := decoder.Decode(&fields); err != nil {
+		return nil, fmt.Errorf("Failed decoding record: %v", err)
 	}
 
-	if _, err := self.dataFile.Seek(offset, io.SeekStart); err != nil {
+	return fields, nil
+}
+
+func (self *BasicTable) LoadRecord(id RecordId, record Record) error {
+	fields, err := self.loadFields(id)
+
+	if err != nil {
 		return err
 	}
 
-	data := make(RecordData)
-	decoder := gob.NewDecoder(self.dataFile)
-	
-	if err := decoder.Decode(&data); err != nil {
-		return fmt.Errorf("Failed decoding record: %v", err)
+	if fields == nil {
+		return fmt.Errorf("Record not found: %v/%v", self.name, id)
 	}
 
 	for _, c := range self.columns {
-		c.Set(record, data[c.Name()])
+		c.Set(record, fields[c.Name()])
 	}
 
 	return nil
