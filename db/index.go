@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/gob"
 	"fmt"
+	"gappkit/util"
 	"io"
 	"os"
 	"path"
@@ -19,7 +20,7 @@ type Index struct {
 	unique bool
 }
 
-type IndexCompare = func(x, y IndexKey) Order
+type IndexCompare = func(x, y IndexKey) util.Order
 type IndexKey []interface{}
 type IndexValue []RecordId
 
@@ -42,14 +43,14 @@ func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Colum
 	self.name = name
 	self.unique = unique
 	
-	self.compare = func(x, y IndexKey) Order {
+	self.compare = func(x, y IndexKey) util.Order {
 		for i, c := range keyColumns {
-			if result := c.Compare(x[i], y[i]); result != Eq {
+			if result := c.Compare(x[i], y[i]); result != util.Eq {
 				return result
 			}
 		}
 
-		return Eq
+		return util.Eq
 	}
 }
 
@@ -100,18 +101,18 @@ func (self *Index) Close() error {
 	return nil
 }
 
-func (self *Index) Key(fields Fields) IndexKey {
+func (self *Index) Key(record Record) IndexKey {
 	var k IndexKey
 	
 	for _, c := range self.keyColumns {
-		k = append(k, fields[c.Name()])
+		k = append(k, record.Get(c))
 	}
 
 	return k
 }
 
-func (self *Index) Add(fields Fields, id RecordId) bool {
-	return self.AddNode(self.Key(fields), id)
+func (self *Index) Add(id RecordId, record Record) bool {
+	return self.AddNode(self.Key(record), id)
 }
 
 func (self *Index) AddNode(key IndexKey, value RecordId) bool {
@@ -136,8 +137,8 @@ func (self *Index) Len() uint64 {
 	return self.len
 }
 
-func (self *Index) Remove(fields Fields, id RecordId) bool {
-	return self.RemoveNode(self.Key(fields), id)
+func (self *Index) Remove(id RecordId, record Record) bool {
+	return self.RemoveNode(self.Key(record), id)
 }
 
 func (self *Index) RemoveNode(key IndexKey, value RecordId) bool {
@@ -163,7 +164,7 @@ func (self *Index) removeValue(node *IndexNode, value RecordId) bool {
 func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*IndexNode, bool) {
 	var ok bool
 
-	if self.compare(key, node.key) == Lt {
+	if self.compare(key, node.key) == util.Lt {
 		if !node.left.isRed() && !node.left.left.isRed() {
 			node = node.moveRedLeft()
 		}
@@ -174,7 +175,7 @@ func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*I
 			node = node.rotr()
 		}
 
-		if self.compare(key, node.key) == Eq && node.right == nil {
+		if self.compare(key, node.key) == util.Eq && node.right == nil {
 			ok := self.removeValue(node, value)
 
 			if ok && len(node.value) == 0 {
@@ -193,7 +194,7 @@ func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*I
 			}
 		}
 
-		if self.compare(key, node.key) == Eq {
+		if self.compare(key, node.key) == util.Eq {
 			ok := self.removeValue(node, value)
 			
 			if ok && len(node.value) > 0 {
@@ -223,9 +224,9 @@ func (self *Index) addNode(node *IndexNode, key IndexKey, value RecordId) (*Inde
 	var ok bool
 
 	switch self.compare(key, node.key) {
-	case Lt:
+	case util.Lt:
 		node.left, ok = self.addNode(node.left, key, value)
-	case Gt:
+	case util.Gt:
 		node.right, ok = self.addNode(node.right, key, value)
 	default:
 		if self.unique {
@@ -243,9 +244,9 @@ func (self *Index) addNode(node *IndexNode, key IndexKey, value RecordId) (*Inde
 func (self *Index) findNode(node *IndexNode, key IndexKey) *IndexNode {
 	for node != nil {
 		switch self.compare(key, node.key) {
-		case Lt:
+		case util.Lt:
 			node = node.left
-		case Gt:
+		case util.Gt:
 			node = node.right
 		default:
 			return node
@@ -258,7 +259,7 @@ func (self *Index) findNode(node *IndexNode, key IndexKey) *IndexNode {
 func (self *Index) findLowerNode(node *IndexNode, key IndexKey) *IndexNode {
 	for node != nil {
 		switch self.compare(key, node.key) {
-		case Lt:
+		case util.Lt:
 			node = node.left
 		default:
 			return node

@@ -18,11 +18,11 @@ func main() {
 	r := db.NewResource()
 	r.Name = "foo"
 
-	if err := r.Store(db); err != nil {
+	if err := db.StoreResource(r); err != nil {
 		log.Fatal(err)
 	}
 
-	lr, err := db.Resource.Load(r.Id())
+	lr, err := db.LoadResource(r.Id())
 
 	if err != nil {
 		log.Fatal(err)

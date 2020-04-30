@@ -1,3 +1,10 @@
+* debug bookng
+* add Set
+* switch Table/Index/Record/RecordSet to use Set
+* --
+* add Resource.Quantity/StartTime/EndTime
+** default 1/min/max
+** update quantity on insert/update if != 0
 * finish Quantity.Update()
 ** loop categories recursively (skip self)
 ** extract tests from main
@@ -6,4 +13,4 @@
 ** use <go> tag
 *** allow singleton tag
 *** add Echo function to generated code
-<go Echo("foo %v", 42)/>
+<go Sprintf("foo %v", 42)/>

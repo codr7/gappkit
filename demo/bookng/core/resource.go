@@ -5,61 +5,35 @@ import (
 	"time"
 )
 
-type ResourceTable struct {
-	db.BasicTable
-}
-
-func (self *ResourceTable) Init(root *db.Root) db.Table {
-	self.BasicTable.Init(root, "resource")
-	root.AddTable(self)
-	return self
-}
-
-func (self *ResourceTable) Load(id db.RecordId) (db.Record, error) {
-	r := new(Resource)
-	r.BasicRecord.Init(id)
-
-	if err := self.LoadRecord(id, r); err != nil {
-		return nil, err
-	}
-	
-	return r, nil
-}
-
 type Resource struct {
-	db.BasicRecord
+	id db.RecordId
 	Categories db.RecordSet
 	Name string
 }
 
-func (self *Resource) Store(db *DB) error {
-	if !db.Resource.Exists(self.Id()) {
-		if err := db.NewQuantity(self, MinTime, MaxTime).Store(db); err != nil {
-			return err
-		}
-	}
-	
-	if err := db.Resource.Store(self); err != nil {
-		return err
-	}
+func (self *Resource) Init(id db.RecordId) *Resource {
+	self.id = id
+	return self
+}
 
-	return nil
+func (self *Resource) Id() db.RecordId {
+	return self.id
 }
 
 func (self *Resource) UpdateQuantity(db *DB, startTime, endTime time.Time, total, available int) error {
-	in := db.QuantityIndex.FindLower(self.Id(), startTime)
+	in := db.QuantityIndex.FindLower(self.id, startTime)
 	var out []*Quantity
 	
 	for in.Next() && in.Key(1).(time.Time).Before(endTime) {
-		q, err := db.Quantity.Load(in.Value())
+		q, err := db.LoadQuantity(in.Value())
 		
-		if out, err = q.(*Quantity).Update(startTime, endTime, total, available, out); err != nil {
+		if out, err = q.Update(startTime, endTime, total, available, out); err != nil {
 			return err
 		}
 	}
 
 	for _, q := range out {
-		if err := q.Store(db); err != nil {
+		if err := db.StoreQuantity(q); err != nil {
 			return err
 		}
 	}
@@ -67,9 +41,39 @@ func (self *Resource) UpdateQuantity(db *DB, startTime, endTime time.Time, total
 	return nil
 }
 
+func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
+	in, err := self.Resource.Load(id)
+	
+	if err != nil {
+		return nil, err
+	}
+
+	out := new(Resource).Init(id)
+	out.Name = in.Get(&self.ResourceName).(string)
+	out.Categories = in.Get(&self.ResourceCategories).(db.RecordSet)
+	return out, nil
+}
+
 func (self *DB) NewResource() *Resource {
-	r := new(Resource)
-	r.BasicRecord.Init(self.Resource.NextId())
-	r.Categories.Add(r.Id())
+	r := new(Resource).Init(self.Resource.NextId())
+	r.Categories.Add(r.id)
 	return r
+}
+
+func (self *DB) StoreResource(in *Resource) error {
+	if !self.Resource.Exists(in.id) {
+		if err := self.StoreQuantity(self.NewQuantity(in, MinTime, MaxTime)); err != nil {
+			return err
+		}
+	}
+	
+	var out db.Record
+	out.Set(&self.ResourceCategories, in.Categories)
+	out.Set(&self.ResourceName, in.Name)
+	
+	if err := self.Resource.Store(in.id, out); err != nil {
+		return err
+	}
+
+	return nil
 }

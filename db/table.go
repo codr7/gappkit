@@ -3,6 +3,7 @@ package db
 import (
 	"encoding/gob"
 	"fmt"
+	"gappkit/util"
 	"io"
 	"os"
 	"path"
@@ -12,19 +13,7 @@ type RecordId = uint64
 type Fields = map[string]interface{}
 type Offset = int64
 
-type Table interface {
-	AddColumn(Column)
-	AddIndex(*Index)
-	Close() error
-	Exists(RecordId) bool
-	Load(RecordId) (Record, error)
-	LoadRecord(RecordId, Record) error
-	NextId() RecordId
-	Open() error
-	Store(Record) error
-}
-
-type BasicTable struct {
+type Table struct {
 	columns []Column
 	dataFile *os.File
 	keyEncoder *gob.Encoder
@@ -36,22 +25,22 @@ type BasicTable struct {
 	indexes []*Index
 }
 
-func (self *BasicTable) Init(root *Root, name string) *BasicTable {
+func (self *Table) Init(root *Root, name string) *Table {
 	self.root = root
 	self.name = name
 	self.records = make(map[RecordId]Offset)
 	return self
 }
 
-func (self *BasicTable) AddColumn(column Column) {
+func (self *Table) AddColumn(column Column) {
 	self.columns = append(self.columns, column)
 }
 
-func (self *BasicTable) AddIndex(index *Index) {
+func (self *Table) AddIndex(index *Index) {
 	self.indexes = append(self.indexes, index)
 }
 
-func (self *BasicTable) Open() error {
+func (self *Table) Open() error {
 	var err error
 	keyPath := path.Join(self.root.path, fmt.Sprintf("%v.key", self.name))
 	
@@ -101,7 +90,7 @@ func (self *BasicTable) Open() error {
 	return nil
 }
 
-func (self *BasicTable) Close() error {
+func (self *Table) Close() error {
 	if err := self.keyFile.Close(); err != nil {
 		return err
 	}
@@ -119,12 +108,12 @@ func (self *BasicTable) Close() error {
 	return nil
 }
 
-func (self *BasicTable) NextId() RecordId {
+func (self *Table) NextId() RecordId {
 	self.nextRecordId++
 	return self.nextRecordId
 }
 
-func (self *BasicTable) storeKey(id RecordId, offset Offset) error {
+func (self *Table) storeKey(id RecordId, offset Offset) error {
 	if err := self.keyEncoder.Encode(id); err != nil {
 		return err
 	}
@@ -136,63 +125,55 @@ func (self *BasicTable) storeKey(id RecordId, offset Offset) error {
 	return nil
 }
 
-func (self *BasicTable) storeData(record Record) (Offset, error) {
-	fields := make(Fields)
-
-	for _, c := range self.columns {
-		fields[c.Name()] = c.Get(record)
-	}
-
+func (self *Table) storeData(id RecordId, record Record) (Offset, error) {
 	offset, err := self.dataFile.Seek(0, io.SeekEnd)
 	
 	if err != nil {
 		return -1, err
 	}
 
-	id := record.Id()
-
-	if prev, err := self.loadFields(id); err != nil {
+	if prev, err := self.Load(id); err != nil {
 		return -1, err
 	} else if prev != nil {
 		for _, ix := range self.indexes {
-			ix.Remove(prev, id)
+			ix.Remove(id, *prev)
 		}
 	}
 	
 	self.records[id] = offset
 	encoder := gob.NewEncoder(self.dataFile)
 	
-	if err := encoder.Encode(fields); err != nil {
+	if err := encoder.Encode(record); err != nil {
 		return -1, err
 	}
 
 	for _, ix := range self.indexes {
-		ix.Add(fields, id)
+		ix.Add(id, record)
 	}
 	
 	return offset, nil
 }
 
-func (self *BasicTable) Store(record Record) error {
-	offset, err := self.storeData(record)
+func (self *Table) Store(id RecordId, record Record) error {
+	offset, err := self.storeData(id, record)
 
 	if err != nil {
 		return err
 	}
 
-	if err = self.storeKey(record.Id(), offset); err != nil {
+	if err = self.storeKey(id, offset); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (self *BasicTable) Exists(id RecordId) bool {
+func (self *Table) Exists(id RecordId) bool {
 	_, ok := self.records[id]
 	return ok
 }
 
-func (self *BasicTable) loadFields(id RecordId) (Fields, error) {
+func (self *Table) Load(id RecordId) (*Record, error) {
 	offset, ok := self.records[id]
 
 	if !ok {
@@ -204,29 +185,23 @@ func (self *BasicTable) loadFields(id RecordId) (Fields, error) {
 	}
 	
 	decoder := gob.NewDecoder(self.dataFile)
-	fields := make(Fields)
+	record := new(Record)
 	
-	if err := decoder.Decode(&fields); err != nil {
+	if err := decoder.Decode(&record); err != nil {
 		return nil, fmt.Errorf("Failed decoding record: %v", err)
 	}
 
-	return fields, nil
+	return record, nil
 }
 
-func (self *BasicTable) LoadRecord(id RecordId, record Record) error {
-	fields, err := self.loadFields(id)
-
-	if err != nil {
-		return err
+func CompareRecordId(x, y RecordId) util.Order {
+	if x < y {
+		return util.Lt
 	}
 
-	if fields == nil {
-		return fmt.Errorf("Record not found: %v/%v", self.name, id)
+	if x > y {
+		return util.Gt
 	}
-
-	for _, c := range self.columns {
-		c.Set(record, fields[c.Name()])
-	}
-
-	return nil
+	
+	return util.Eq
 }

@@ -1,8 +1,9 @@
-package db
+package util
 
 import (
 	"strings"
 	"time"
+	"unsafe"
 )
 
 type Order = int
@@ -27,12 +28,14 @@ func CompareInt64(x, y int64) Order {
 	return Eq
 }
 
-func CompareRecordId(x, y RecordId) Order {
-	if x < y {
+func ComparePointer(x, y unsafe.Pointer) Order {
+	xp, yp := uintptr(x), uintptr(y)
+	
+	if xp < yp {
 		return Lt
 	}
-
-	if x > y {
+	
+	if xp > yp {
 		return Gt
 	}
 	
