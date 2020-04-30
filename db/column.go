@@ -4,14 +4,12 @@ import (
 	"gappkit/compare"
 	"fmt"
 	"reflect"
-	"unsafe"
 )
 
 type Column interface {
 	Compare(x, y interface{}) compare.Order
 	Get(record Record) interface{}
 	Name() string
-	Pointer() unsafe.Pointer
 	Set(record Record, val interface{})
 }
 
@@ -42,10 +40,6 @@ func (self *BasicColumn) Get(in Record) interface{} {
 	}
 
 	return f.Interface()
-}
-
-func (self *BasicColumn) Pointer() unsafe.Pointer {
-	return unsafe.Pointer(self)
 }
 
 func (self *BasicColumn) Set(out Record, val interface{}) {

@@ -4,6 +4,7 @@ import (
 	"encoding/gob"
 	"fmt"
 	"gappkit/compare"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path"
@@ -45,7 +46,7 @@ func (self *Table) Open() error {
 	keyPath := path.Join(self.root.path, fmt.Sprintf("%v.key", self.name))
 	
 	if self.keyFile, err = os.OpenFile(keyPath, os.O_CREATE|os.O_RDWR, os.ModePerm); err != nil {
-		return err
+		return errors.Wrapf(err, "Failed opening file: %v", keyPath)
 	}
 
 	decoder := gob.NewDecoder(self.keyFile)
@@ -58,7 +59,7 @@ func (self *Table) Open() error {
 				break
 			}
 			
-			return fmt.Errorf("Failed decoding id: %v", err)
+			return errors.Wrap(err, "Failed decoding id")
 		}
 		
 		if id > self.nextRecordId {
@@ -68,7 +69,7 @@ func (self *Table) Open() error {
 		var offset Offset
 
 		if err := decoder.Decode(&offset); err != nil {
-			return fmt.Errorf("Failed decoding offset: %v", err)
+			return errors.Wrap(err, "Failed decoding offset")
 		}
 
 		self.records[id] = offset
@@ -78,12 +79,12 @@ func (self *Table) Open() error {
 	dataPath := path.Join(self.root.path, fmt.Sprintf("%v.dat", self.name))
 
 	if self.dataFile, err = os.OpenFile(dataPath, os.O_CREATE|os.O_RDWR, os.ModePerm); err != nil {
-		return err
+		return errors.Wrapf(err, "Failed opening file: %v", dataPath)
 	}
 
 	for _, index := range self.indexes {
 		if err = index.Open(); err != nil {
-			return err
+			return errors.Wrapf(err, "Failed opening index: %v", index.name)
 		}
 	}
 	
@@ -92,16 +93,16 @@ func (self *Table) Open() error {
 
 func (self *Table) Close() error {
 	if err := self.keyFile.Close(); err != nil {
-		return err
+		return errors.Wrap(err, "Failed closing key file")
 	}
 
 	if err := self.dataFile.Close(); err != nil {
-		return err
+		return errors.Wrap(err, "Failed closing data file")
 	}
 
 	for _, index := range self.indexes {
 		if err := index.Close(); err != nil {
-			return err
+			return errors.Wrapf(err, "Failed closing index: %v", index.name)
 		}
 	}
 
@@ -115,11 +116,11 @@ func (self *Table) NextId() RecordId {
 
 func (self *Table) storeKey(id RecordId, offset Offset) error {
 	if err := self.keyEncoder.Encode(id); err != nil {
-		return err
+		return errors.Wrap(err, "Failed encoding id")
 	}
 
 	if err := self.keyEncoder.Encode(offset); err != nil {
-		return err
+		return errors.Wrap(err, "Failed encoding offset")
 	}
 
 	return nil
@@ -127,13 +128,13 @@ func (self *Table) storeKey(id RecordId, offset Offset) error {
 
 func (self *Table) storeData(id RecordId, record Record) (Offset, error) {
 	offset, err := self.dataFile.Seek(0, io.SeekEnd)
-	
+
 	if err != nil {
-		return -1, err
+		return -1, errors.Wrap(err, "Failed seeking data file")
 	}
 
 	if prev, err := self.Load(id); err != nil {
-		return -1, err
+		return -1, errors.Wrap(err, "Failed loading record")
 	} else if prev != nil {
 		for _, ix := range self.indexes {
 			ix.Remove(id, *prev)
@@ -144,7 +145,7 @@ func (self *Table) storeData(id RecordId, record Record) (Offset, error) {
 	encoder := gob.NewEncoder(self.dataFile)
 	
 	if err := encoder.Encode(record); err != nil {
-		return -1, err
+		return -1, errors.Wrap(err, "Failed encoding record")
 	}
 
 	for _, ix := range self.indexes {
@@ -158,11 +159,11 @@ func (self *Table) Store(id RecordId, record Record) error {
 	offset, err := self.storeData(id, record)
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "Failed storing data")
 	}
 
 	if err = self.storeKey(id, offset); err != nil {
-		return err
+		return errors.Wrap(err, "Falied storing key")
 	}
 
 	return nil
@@ -181,14 +182,14 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 	}
 	
 	if _, err := self.dataFile.Seek(offset, io.SeekStart); err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "Failed seeking data file")
 	}
 	
 	decoder := gob.NewDecoder(self.dataFile)
 	record := new(Record)
 	
 	if err := decoder.Decode(&record); err != nil {
-		return nil, fmt.Errorf("Failed decoding record: %v", err)
+		return nil, errors.Wrap(err, "Failed decoding record: %v")
 	}
 
 	return record, nil

@@ -66,7 +66,7 @@ func (self *DB) StoreResource(in *Resource) error {
 			return err
 		}
 	}
-	
+
 	var out db.Record
 	out.Set(&self.ResourceCategories, in.Categories)
 	out.Set(&self.ResourceName, in.Name)

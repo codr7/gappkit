@@ -10,7 +10,7 @@ func main() {
 	db := core.NewDB("db")
 
 	if err := db.Open(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("%+v", err)
 	}
 	
 	defer db.Close()
@@ -19,13 +19,13 @@ func main() {
 	r.Name = "foo"
 
 	if err := db.StoreResource(r); err != nil {
-		log.Fatal(err)
+		log.Fatalf("%+v", err)
 	}
 
 	lr, err := db.LoadResource(r.Id())
 
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal("%+v", err)
 	}
 	
 	log.Printf("%v\n", lr)

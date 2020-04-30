@@ -1,4 +1,5 @@
-* debug bookng
+* switch to storing [StoredField] for records
+** encode/decode on store/load
 * add Resource.Quantity/StartTime/EndTime
 ** default 1/min/max
 ** update quantity on insert/update if != 0

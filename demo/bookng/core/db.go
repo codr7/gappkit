@@ -27,17 +27,17 @@ func NewDB(path string) *DB {
 	self := new(DB)
 	self.Root.Init(path)
 
-	self.Quantity.Init(&self.Root, "quantity")
+	self.AddTable(self.Quantity.Init(&self.Root, "quantity"))
 	self.Quantity.AddColumn(self.QuantityResource.Init("Resource"))
 	self.Quantity.AddColumn(self.QuantityStartTime.Init("StartTime"))
 	self.Quantity.AddColumn(self.QuantityEndTime.Init("EndTime"))
 	self.Quantity.AddColumn(self.QuantityTotal.Init("Total"))
 	self.Quantity.AddColumn(self.QuantityAvailable.Init("Available"))
-
+	
 	self.QuantityIndex.Init(&self.Root, "quantity", true, &self.QuantityResource, &self.QuantityStartTime)
 	self.Quantity.AddIndex(&self.QuantityIndex)
 	
-	self.Resource.Init(&self.Root, "resource")
+	self.AddTable(self.Resource.Init(&self.Root, "resource"))
 	self.Resource.AddColumn(self.ResourceName.Init("Name"))
 	self.Resource.AddColumn(self.ResourceCategories.Init("Categories"))
 

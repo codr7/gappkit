@@ -47,7 +47,7 @@ func (self Record) Find(column Column) (int, bool) {
 	for min < max {
 		i := (min+max) / 2
 
-		switch compare.Pointer(column.Pointer(), self.Fields[i].Column.Pointer()) {		
+		switch compare.String(column.Name(), self.Fields[i].Column.Name()) {		
 			case compare.Lt:
 				max = i
 			case compare.Gt:
