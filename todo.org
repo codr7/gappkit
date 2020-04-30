@@ -1,6 +1,11 @@
-* add Resource.Quantity/StartTime/EndTime
+* add ResourceQuantity/StartTime/EndTime
 ** default 1/min/max
 ** update quantity on insert/update if != 0
+* --
+* replace core structs with record type aliases?
+** add Record.id/Id()
+** add typed getters/setters
+* --
 * finish Quantity.Update()
 ** loop categories recursively (skip self)
 ** extract tests from main
