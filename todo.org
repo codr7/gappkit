@@ -1,6 +1,3 @@
-* add Record.id/Id()
-** remove separate arg from table methods
-* --
 * add Resource.Quantity/StartTime/EndTime
 ** default 1/min/max
 ** update quantity on insert/update if != 0
@@ -8,8 +5,4 @@
 ** loop categories recursively (skip self)
 ** extract tests from main
 * add db transactions
-* add compiled templates
-** use <go> tag
-*** allow singleton tag
-*** add Echo function to generated code
-<go Sprintf("foo %v", 42)/>
+* add templates
