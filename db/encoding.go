@@ -7,5 +7,7 @@ import (
 
 func init() {
 	gob.Register(RecordSet{})
+	gob.Register(StoredField{})
+	gob.Register(StoredRecord{})
 	gob.Register(time.Now())
 }

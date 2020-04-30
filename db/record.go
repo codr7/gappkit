@@ -94,3 +94,9 @@ func (self *Record) Set(column Column, value interface{}) {
 		}
 	}
 }
+
+func (self Record) Store(stored *StoredRecord) {
+	for _, f := range self.Fields {
+		stored.Set(f.Column, f.Value)
+	}
+}

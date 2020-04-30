@@ -15,7 +15,7 @@ type Fields = map[string]interface{}
 type Offset = int64
 
 type Table struct {
-	columns []Column
+	columns map[string]Column
 	dataFile *os.File
 	keyEncoder *gob.Encoder
 	keyFile *os.File
@@ -29,16 +29,21 @@ type Table struct {
 func (self *Table) Init(root *Root, name string) *Table {
 	self.root = root
 	self.name = name
+	self.columns = make(map[string]Column)
 	self.records = make(map[RecordId]Offset)
 	return self
 }
 
 func (self *Table) AddColumn(column Column) {
-	self.columns = append(self.columns, column)
+	self.columns[column.Name()] = column
 }
 
 func (self *Table) AddIndex(index *Index) {
 	self.indexes = append(self.indexes, index)
+}
+
+func (self *Table) FindColumn(name string) Column {
+	return self.columns[name]
 }
 
 func (self *Table) Open() error {
@@ -143,8 +148,10 @@ func (self *Table) storeData(id RecordId, record Record) (Offset, error) {
 	
 	self.records[id] = offset
 	encoder := gob.NewEncoder(self.dataFile)
+	var stored StoredRecord
+	record.Store(&stored)
 	
-	if err := encoder.Encode(record); err != nil {
+	if err := encoder.Encode(stored); err != nil {
 		return -1, errors.Wrap(err, "Failed encoding record")
 	}
 
@@ -186,13 +193,13 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 	}
 	
 	decoder := gob.NewDecoder(self.dataFile)
-	record := new(Record)
+	var record StoredRecord
 	
 	if err := decoder.Decode(&record); err != nil {
 		return nil, errors.Wrap(err, "Failed decoding record: %v")
 	}
 
-	return record, nil
+	return record.Load(self), nil
 }
 
 func CompareRecordId(x, y RecordId) compare.Order {
