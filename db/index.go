@@ -56,7 +56,7 @@ func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Colum
 
 func (self *Index) Open() error {
 	var err error
-	path := path.Join(self.root.path, fmt.Sprintf("%v.index", self.name))
+	path := path.Join(self.root.path, fmt.Sprintf("%v.idx", self.name))
 	
 	if self.file, err = os.OpenFile(path, os.O_CREATE|os.O_RDWR, os.ModePerm); err != nil {
 		return err

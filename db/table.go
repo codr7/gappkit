@@ -75,7 +75,7 @@ func (self *Table) Open() error {
 	}
 
 	self.keyEncoder = gob.NewEncoder(self.keyFile)
-	dataPath := path.Join(self.root.path, fmt.Sprintf("%v.data", self.name))
+	dataPath := path.Join(self.root.path, fmt.Sprintf("%v.dat", self.name))
 
 	if self.dataFile, err = os.OpenFile(dataPath, os.O_CREATE|os.O_RDWR, os.ModePerm); err != nil {
 		return err
