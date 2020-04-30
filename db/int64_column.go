@@ -1,7 +1,7 @@
 package db
 
 import (
-	"gappkit/util"
+	"gappkit/compare"
 )
 
 type Int64Column struct {
@@ -13,7 +13,7 @@ func (self *Int64Column) Init(name string) *Int64Column {
 	return self
 }
 
-func (self *Int64Column) Compare(x, y interface{}) util.Order {
-	return util.CompareInt64(x.(int64), y.(int64))
+func (self *Int64Column) Compare(x, y interface{}) compare.Order {
+	return compare.Int64(x.(int64), y.(int64))
 }
 

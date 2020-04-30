@@ -3,7 +3,7 @@ package db
 import (
 	"encoding/gob"
 	"fmt"
-	"gappkit/util"
+	"gappkit/compare"
 	"io"
 	"os"
 	"path"
@@ -20,7 +20,7 @@ type Index struct {
 	unique bool
 }
 
-type IndexCompare = func(x, y IndexKey) util.Order
+type IndexCompare = func(x, y IndexKey) compare.Order
 type IndexKey []interface{}
 type IndexValue []RecordId
 
@@ -43,14 +43,14 @@ func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Colum
 	self.name = name
 	self.unique = unique
 	
-	self.compare = func(x, y IndexKey) util.Order {
+	self.compare = func(x, y IndexKey) compare.Order {
 		for i, c := range keyColumns {
-			if result := c.Compare(x[i], y[i]); result != util.Eq {
+			if result := c.Compare(x[i], y[i]); result != compare.Eq {
 				return result
 			}
 		}
 
-		return util.Eq
+		return compare.Eq
 	}
 }
 
@@ -164,7 +164,7 @@ func (self *Index) removeValue(node *IndexNode, value RecordId) bool {
 func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*IndexNode, bool) {
 	var ok bool
 
-	if self.compare(key, node.key) == util.Lt {
+	if self.compare(key, node.key) == compare.Lt {
 		if !node.left.isRed() && !node.left.left.isRed() {
 			node = node.moveRedLeft()
 		}
@@ -175,7 +175,7 @@ func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*I
 			node = node.rotr()
 		}
 
-		if self.compare(key, node.key) == util.Eq && node.right == nil {
+		if self.compare(key, node.key) == compare.Eq && node.right == nil {
 			ok := self.removeValue(node, value)
 
 			if ok && len(node.value) == 0 {
@@ -194,7 +194,7 @@ func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*I
 			}
 		}
 
-		if self.compare(key, node.key) == util.Eq {
+		if self.compare(key, node.key) == compare.Eq {
 			ok := self.removeValue(node, value)
 			
 			if ok && len(node.value) > 0 {
@@ -224,9 +224,9 @@ func (self *Index) addNode(node *IndexNode, key IndexKey, value RecordId) (*Inde
 	var ok bool
 
 	switch self.compare(key, node.key) {
-	case util.Lt:
+	case compare.Lt:
 		node.left, ok = self.addNode(node.left, key, value)
-	case util.Gt:
+	case compare.Gt:
 		node.right, ok = self.addNode(node.right, key, value)
 	default:
 		if self.unique {
@@ -244,9 +244,9 @@ func (self *Index) addNode(node *IndexNode, key IndexKey, value RecordId) (*Inde
 func (self *Index) findNode(node *IndexNode, key IndexKey) *IndexNode {
 	for node != nil {
 		switch self.compare(key, node.key) {
-		case util.Lt:
+		case compare.Lt:
 			node = node.left
-		case util.Gt:
+		case compare.Gt:
 			node = node.right
 		default:
 			return node
@@ -259,7 +259,7 @@ func (self *Index) findNode(node *IndexNode, key IndexKey) *IndexNode {
 func (self *Index) findLowerNode(node *IndexNode, key IndexKey) *IndexNode {
 	for node != nil {
 		switch self.compare(key, node.key) {
-		case util.Lt:
+		case compare.Lt:
 			node = node.left
 		default:
 			return node

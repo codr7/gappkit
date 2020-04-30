@@ -1,14 +1,14 @@
 package db
 
 import (
-	"gappkit/util"
+	"gappkit/compare"
 	"fmt"
 	"reflect"
 	"unsafe"
 )
 
 type Column interface {
-	Compare(x, y interface{}) util.Order
+	Compare(x, y interface{}) compare.Order
 	Get(record Record) interface{}
 	Name() string
 	Pointer() unsafe.Pointer

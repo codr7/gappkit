@@ -1,4 +1,4 @@
-package util
+package compare
 
 import (
 	"strings"
@@ -8,7 +8,7 @@ import (
 
 type Order = int
 
-type Compare = func(key, val interface{}) Order
+type Func = func(key, val interface{}) Order
 
 const (
 	Lt = Order(-1)
@@ -16,7 +16,7 @@ const (
 	Gt = Order(1)
 )
 
-func CompareInt64(x, y int64) Order {
+func Int64(x, y int64) Order {
 	if x < y {
 		return Lt
 	}
@@ -28,7 +28,7 @@ func CompareInt64(x, y int64) Order {
 	return Eq
 }
 
-func ComparePointer(x, y unsafe.Pointer) Order {
+func Pointer(x, y unsafe.Pointer) Order {
 	xp, yp := uintptr(x), uintptr(y)
 	
 	if xp < yp {
@@ -42,11 +42,11 @@ func ComparePointer(x, y unsafe.Pointer) Order {
 	return Eq
 }
 
-func CompareString(x, y string) Order {
+func String(x, y string) Order {
 	return Order(strings.Compare(x, y))
 }
 
-func CompareTime(x, y interface{}) Order {
+func Time(x, y interface{}) Order {
 	xt := x.(time.Time)
 	yt := y.(time.Time)
 	

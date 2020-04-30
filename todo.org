@@ -1,7 +1,4 @@
 * debug bookng
-* add Set
-* switch Table/Index/Record/RecordSet to use Set
-* --
 * add Resource.Quantity/StartTime/EndTime
 ** default 1/min/max
 ** update quantity on insert/update if != 0

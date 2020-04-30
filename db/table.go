@@ -3,7 +3,7 @@ package db
 import (
 	"encoding/gob"
 	"fmt"
-	"gappkit/util"
+	"gappkit/compare"
 	"io"
 	"os"
 	"path"
@@ -194,14 +194,14 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 	return record, nil
 }
 
-func CompareRecordId(x, y RecordId) util.Order {
+func CompareRecordId(x, y RecordId) compare.Order {
 	if x < y {
-		return util.Lt
+		return compare.Lt
 	}
 
 	if x > y {
-		return util.Gt
+		return compare.Gt
 	}
 	
-	return util.Eq
+	return compare.Eq
 }

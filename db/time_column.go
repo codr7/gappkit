@@ -1,7 +1,7 @@
 package db
 
 import (
-	"gappkit/util"
+	"gappkit/compare"
 	"time"
 )
 
@@ -14,7 +14,7 @@ func (self *TimeColumn) Init(name string) *TimeColumn {
 	return self
 }
 
-func (self *TimeColumn) Compare(x, y interface{}) util.Order {
-	return util.CompareTime(x.(time.Time), y.(time.Time))
+func (self *TimeColumn) Compare(x, y interface{}) compare.Order {
+	return compare.Time(x.(time.Time), y.(time.Time))
 }
 

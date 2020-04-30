@@ -1,7 +1,7 @@
 package db
 
 import (
-	"gappkit/util"
+	"gappkit/compare"
 )
 
 type RecordSet struct {
@@ -19,26 +19,26 @@ func (self *RecordSet) Add(id RecordId) bool {
 	return true
 }
 
-func (self RecordSet) Compare(other RecordSet) util.Order {
+func (self RecordSet) Compare(other RecordSet) compare.Order {
 	max := other.Len()-1
 	var i int
 	var id RecordId
 	
 	for i, id = range self.Items {
 		if i > max {
-			return util.Gt
+			return compare.Gt
 		}
 
-		if result := CompareRecordId(id, other.Items[i]); result != util.Eq {
+		if result := CompareRecordId(id, other.Items[i]); result != compare.Eq {
 			return result
 		}
 	}
 
 	if max > i {
-		return util.Lt
+		return compare.Lt
 	}
 
-	return util.Eq
+	return compare.Eq
 }
 
 func (self RecordSet) Find(id RecordId) (int, bool) {

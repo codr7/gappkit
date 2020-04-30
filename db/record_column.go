@@ -1,7 +1,7 @@
 package db
 
 import (
-	"gappkit/util"
+	"gappkit/compare"
 )
 
 type RecordColumn struct {
@@ -13,7 +13,7 @@ func (self *RecordColumn) Init(name string) *RecordColumn {
 	return self
 }
 
-func (self *RecordColumn) Compare(x, y interface{}) util.Order {
+func (self *RecordColumn) Compare(x, y interface{}) compare.Order {
 	return CompareRecordId(x.(RecordId), y.(RecordId))
 }
 

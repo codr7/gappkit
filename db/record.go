@@ -1,7 +1,7 @@
 package db
 
 import (
-	"gappkit/util"
+	"gappkit/compare"
 )
 
 type Field struct {
@@ -13,32 +13,32 @@ type Record struct {
 	Fields []Field
 }
 
-func (self Record) Compare(other Record) util.Order {
+func (self Record) Compare(other Record) compare.Order {
 	max := other.Len()-1
 	var i int
 	var f Field
 
 	for i, f = range self.Fields {
 		if i > max {
-			return util.Gt
+			return compare.Gt
 		}
 
 		otherValue := other.Get(f.Column)
 		
 		if otherValue == nil {
-			return util.Gt
+			return compare.Gt
 		}
 		
-		if result := f.Column.Compare(f.Value, otherValue); result != util.Eq {
+		if result := f.Column.Compare(f.Value, otherValue); result != compare.Eq {
 			return result
 		}
 	}
 
 	if max > i {
-		return util.Lt
+		return compare.Lt
 	}
 
-	return util.Eq
+	return compare.Eq
 }
 
 func (self Record) Find(column Column) (int, bool) {	
@@ -47,10 +47,10 @@ func (self Record) Find(column Column) (int, bool) {
 	for min < max {
 		i := (min+max) / 2
 
-		switch util.ComparePointer(column.Pointer(), self.Fields[i].Column.Pointer()) {		
-			case util.Lt:
+		switch compare.Pointer(column.Pointer(), self.Fields[i].Column.Pointer()) {		
+			case compare.Lt:
 				max = i
-			case util.Gt:
+			case compare.Gt:
 				min = i+1
 			default:
 				return i, true
