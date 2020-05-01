@@ -6,13 +6,15 @@ import (
 )
 
 type Quantity struct {
+	db *DB
 	id db.RecordId
 	Resource db.RecordId
 	StartTime, EndTime time.Time
-	Total, Available int
+	Total, Available int64
 }
 
-func (self *Quantity) Init(id db.RecordId) *Quantity {
+func (self *Quantity) Init(db *DB, id db.RecordId) *Quantity {
+	self.db = db
 	self.id = id
 	return self
 }
@@ -21,11 +23,20 @@ func (self *Quantity) Id() db.RecordId {
 	return self.id
 }
 
-func (self *Quantity) Update(
-	startTime, endTime time.Time,
-	total, available int,
-	out []*Quantity) ([]*Quantity, error) {
-	return out, nil
+func (self *Quantity) Store() error {
+	var out db.Record
+	out.Init(self.id)
+	out.Set(&self.db.QuantityResource, self.Resource)
+	out.Set(&self.db.QuantityStartTime, self.StartTime)
+	out.Set(&self.db.QuantityEndTime, self.EndTime)
+	out.Set(&self.db.QuantityTotal, self.Total)
+	out.Set(&self.db.QuantityAvailable, self.Available)
+
+	if err := self.db.Quantity.Store(out); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (self *DB) LoadQuantity(id db.RecordId) (*Quantity, error) {
@@ -35,35 +46,21 @@ func (self *DB) LoadQuantity(id db.RecordId) (*Quantity, error) {
 		return nil, err
 	}
 
-	out := new(Quantity).Init(id)
+	out := new(Quantity).Init(self, id)
 	out.Resource = in.Get(&self.QuantityResource).(db.RecordId)
 	out.StartTime = in.Get(&self.QuantityStartTime).(time.Time)
 	out.EndTime = in.Get(&self.QuantityEndTime).(time.Time)
-	out.Total = in.Get(&self.QuantityTotal).(int)
-	out.Available = in.Get(&self.QuantityAvailable).(int)
+	out.Total = in.Get(&self.QuantityTotal).(int64)
+	out.Available = in.Get(&self.QuantityAvailable).(int64)
 	return out, nil
 }
 
-func (self *DB) NewQuantity(resource *Resource, startTime, endTime time.Time) *Quantity {
-	q := new(Quantity).Init(self.Quantity.NextId())
+func (self *DB) NewQuantity(resource *Resource, startTime, endTime time.Time, total, available int64) *Quantity {
+	q := new(Quantity).Init(self, self.Quantity.NextId())
 	q.Resource = resource.id
 	q.StartTime = startTime
 	q.EndTime = endTime
+	q.Total = total
+	q.Available = available
 	return q
-}
-
-func (self *DB) StoreQuantity(in *Quantity) error {
-	var out db.Record
-	out.Init(in.id)
-	out.Set(&self.QuantityResource, in.Resource)
-	out.Set(&self.QuantityStartTime, in.StartTime)
-	out.Set(&self.QuantityEndTime, in.EndTime)
-	out.Set(&self.QuantityTotal, in.Total)
-	out.Set(&self.QuantityAvailable, in.Available)
-
-	if err := self.Quantity.Store(out); err != nil {
-		return err
-	}
-
-	return nil
 }

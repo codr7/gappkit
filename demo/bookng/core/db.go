@@ -19,7 +19,10 @@ type DB struct {
 	Resource db.Table
 	ResourceName db.StringColumn
 	ResourceCategories db.RecordSetColumn
-
+	ResourceStartTime db.TimeColumn
+	ResourceEndTime db.TimeColumn
+	ResourceQuantity db.Int64Column
+	
 	ResourceNameIndex db.Index
 }
 
@@ -40,6 +43,9 @@ func NewDB(path string) *DB {
 	self.AddTable(self.Resource.Init(&self.Root, "resource"))
 	self.Resource.AddColumn(self.ResourceName.Init("Name"))
 	self.Resource.AddColumn(self.ResourceCategories.Init("Categories"))
+	self.Resource.AddColumn(self.ResourceStartTime.Init("StartTime"))
+	self.Resource.AddColumn(self.ResourceEndTime.Init("EndTime"))
+	self.Resource.AddColumn(self.ResourceQuantity.Init("Quantity"))
 
 	self.ResourceNameIndex.Init(&self.Root, "resource_name", true, &self.ResourceName)
 	self.Resource.AddIndex(&self.ResourceNameIndex)

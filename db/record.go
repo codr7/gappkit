@@ -23,6 +23,10 @@ func (self *Record) Init(id RecordId) *Record {
 	return self
 }
 
+func (self *Record) Id() RecordId {
+	return self.id
+}
+
 func (self Record) Compare(other Record) compare.Order {
 	max := other.Len()-1
 	var i int
@@ -78,10 +82,6 @@ func (self Record) Get(column Column) interface{} {
 	}
 
 	return self.Fields[i].Value
-}
-
-func (self *Record) Id() RecordId {
-	return self.id
 }
 
 func (self *Record) Len() int {

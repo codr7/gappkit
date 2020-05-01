@@ -10,7 +10,6 @@ import (
 )
 
 type Index struct {
-	compare IndexCompare
 	file *os.File
 	keyColumns []Column
 	len uint64
@@ -20,7 +19,6 @@ type Index struct {
 	unique bool
 }
 
-type IndexCompare = func(x, y IndexKey) compare.Order
 type IndexKey []interface{}
 type IndexValue []RecordId
 
@@ -42,16 +40,7 @@ func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Colum
 	self.root = root
 	self.name = name
 	self.unique = unique
-	
-	self.compare = func(x, y IndexKey) compare.Order {
-		for i, c := range keyColumns {
-			if result := c.Compare(x[i], y[i]); result != compare.Eq {
-				return result
-			}
-		}
-
-		return compare.Eq
-	}
+	self.keyColumns = keyColumns	
 }
 
 func (self *Index) Open() error {
@@ -111,6 +100,16 @@ func (self *Index) Key(record Record) IndexKey {
 	return k
 }
 
+func (self *Index) Compare(x, y IndexKey) compare.Order {
+	for i, c := range self.keyColumns {
+		if result := c.Compare(x[i], y[i]); result != compare.Eq {
+			return result
+		}
+	}
+	
+	return compare.Eq
+}
+
 func (self *Index) Add(record Record) bool {
 	return self.AddNode(self.Key(record), record.id)
 }
@@ -144,7 +143,11 @@ func (self *Index) Remove(record Record) bool {
 func (self *Index) RemoveNode(key IndexKey, value RecordId) bool {
 	var ok bool
 	self.records, ok = self.removeNode(self.records, key, value)
-	self.records.red = false
+
+	if self.records != nil {
+		self.records.red = false
+	}
+	
 	return ok
 }
 
@@ -164,7 +167,7 @@ func (self *Index) removeValue(node *IndexNode, value RecordId) bool {
 func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*IndexNode, bool) {
 	var ok bool
 
-	if self.compare(key, node.key) == compare.Lt {
+	if self.Compare(key, node.key) == compare.Lt {
 		if !node.left.isRed() && !node.left.left.isRed() {
 			node = node.moveRedLeft()
 		}
@@ -175,7 +178,7 @@ func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*I
 			node = node.rotr()
 		}
 
-		if self.compare(key, node.key) == compare.Eq && node.right == nil {
+		if self.Compare(key, node.key) == compare.Eq && node.right == nil {
 			ok := self.removeValue(node, value)
 
 			if ok && len(node.value) == 0 {
@@ -194,7 +197,7 @@ func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*I
 			}
 		}
 
-		if self.compare(key, node.key) == compare.Eq {
+		if self.Compare(key, node.key) == compare.Eq {
 			ok := self.removeValue(node, value)
 			
 			if ok && len(node.value) > 0 {
@@ -223,7 +226,7 @@ func (self *Index) addNode(node *IndexNode, key IndexKey, value RecordId) (*Inde
 
 	var ok bool
 
-	switch self.compare(key, node.key) {
+	switch self.Compare(key, node.key) {
 	case compare.Lt:
 		node.left, ok = self.addNode(node.left, key, value)
 	case compare.Gt:
@@ -243,7 +246,7 @@ func (self *Index) addNode(node *IndexNode, key IndexKey, value RecordId) (*Inde
 
 func (self *Index) findNode(node *IndexNode, key IndexKey) *IndexNode {
 	for node != nil {
-		switch self.compare(key, node.key) {
+		switch self.Compare(key, node.key) {
 		case compare.Lt:
 			node = node.left
 		case compare.Gt:
@@ -258,7 +261,7 @@ func (self *Index) findNode(node *IndexNode, key IndexKey) *IndexNode {
 
 func (self *Index) findLowerNode(node *IndexNode, key IndexKey) *IndexNode {
 	for node != nil {
-		switch self.compare(key, node.key) {
+		switch self.Compare(key, node.key) {
 		case compare.Lt:
 			node = node.left
 		default:

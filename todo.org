@@ -1,12 +1,9 @@
-* add ResourceQuantity/StartTime/EndTime
-** default 1/min/max
-** update quantity on insert/update if != 0
-* finish Quantity.Update()
-** loop categories recursively (skip self)
-** extract tests from main
-* --
-* switch to custom encoding
+* switch to custom db encoding
 ** store integers as text
+* --
+* loop Resource.Categories in UpdateQuantity
+** loop categories recursively (skip recursive self call)
+** extract tests from main
 * --
 * add db transactions
 * add templates

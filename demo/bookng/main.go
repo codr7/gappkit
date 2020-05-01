@@ -18,7 +18,7 @@ func main() {
 	r := db.NewResource()
 	r.Name = "foo"
 
-	if err := db.StoreResource(r); err != nil {
+	if err := r.Store(); err != nil {
 		log.Fatalf("%+v", err)
 	}
 
