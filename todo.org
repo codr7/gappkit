@@ -1,3 +1,10 @@
+* return error on overbook in UpdateQuantity
+* --
+* write to file in Index.Add/Remove
+** init encoder after loading
+** write RecordId = -1 on Remove
+*** handle on load
+* --
 * switch to custom db encoding
 ** store integers as text
 * --

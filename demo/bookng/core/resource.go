@@ -58,17 +58,15 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 }
 
 func (self *Resource) Store() error {
+	var prev *Resource
+	var err error
+	
 	if self.db.Resource.Exists(self.id) {
-		prev, err := self.db.LoadResource(self.id)
-
-		if err != nil {
+		if prev, err = self.db.LoadResource(self.id); err != nil {
 			return err
-		}
-		
-		q := -prev.Quantity
-		prev.UpdateQuantity(prev.StartTime, prev.EndTime, q, q)
+		}		
 	} else {
-		if err := self.db.NewQuantity(self, MinTime, MaxTime, 0, 0).Store(); err != nil {
+		if err = self.db.NewQuantity(self, MinTime, MaxTime, 0, 0).Store(); err != nil {
 			return err
 		}
 	}
@@ -81,15 +79,23 @@ func (self *Resource) Store() error {
 	out.Set(&self.db.ResourceEndTime, self.EndTime)
 	out.Set(&self.db.ResourceQuantity, self.Quantity)
 	
-	if err := self.db.Resource.Store(out); err != nil {
+	if err = self.db.Resource.Store(out); err != nil {
 		return err
 	}
 
-	if err := self.UpdateQuantity(self.StartTime, self.EndTime, self.Quantity, self.Quantity);
+	if err = self.UpdateQuantity(self.StartTime, self.EndTime, self.Quantity, self.Quantity);
 	err != nil {
 		return err
 	}
-	
+
+	if prev != nil {
+		q := -prev.Quantity
+		
+		if err = prev.UpdateQuantity(prev.StartTime, prev.EndTime, q, q); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 
