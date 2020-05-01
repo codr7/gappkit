@@ -148,10 +148,9 @@ func (self *Table) storeData(id RecordId, record Record) (Offset, error) {
 	
 	self.records[id] = offset
 	encoder := gob.NewEncoder(self.dataFile)
-	var stored StoredRecord
-	record.Store(&stored)
+	stored := record.Store()
 	
-	if err := encoder.Encode(stored); err != nil {
+	if err := encoder.Encode(*stored); err != nil {
 		return -1, errors.Wrap(err, "Failed encoding record")
 	}
 
