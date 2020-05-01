@@ -131,22 +131,22 @@ func (self *Table) storeKey(id RecordId, offset Offset) error {
 	return nil
 }
 
-func (self *Table) storeData(id RecordId, record Record) (Offset, error) {
+func (self *Table) storeData(record Record) (Offset, error) {
 	offset, err := self.dataFile.Seek(0, io.SeekEnd)
 
 	if err != nil {
 		return -1, errors.Wrap(err, "Failed seeking data file")
 	}
 
-	if prev, err := self.Load(id); err != nil {
+	if prev, err := self.Load(record.id); err != nil {
 		return -1, errors.Wrap(err, "Failed loading record")
 	} else if prev != nil {
 		for _, ix := range self.indexes {
-			ix.Remove(id, *prev)
+			ix.Remove(*prev)
 		}
 	}
 	
-	self.records[id] = offset
+	self.records[record.id] = offset
 	encoder := gob.NewEncoder(self.dataFile)
 	stored := record.Store()
 	
@@ -155,20 +155,20 @@ func (self *Table) storeData(id RecordId, record Record) (Offset, error) {
 	}
 
 	for _, ix := range self.indexes {
-		ix.Add(id, record)
+		ix.Add(record)
 	}
 	
 	return offset, nil
 }
 
-func (self *Table) Store(id RecordId, record Record) error {
-	offset, err := self.storeData(id, record)
+func (self *Table) Store(record Record) error {
+	offset, err := self.storeData(record)
 
 	if err != nil {
 		return errors.Wrap(err, "Failed storing data")
 	}
 
-	if err = self.storeKey(id, offset); err != nil {
+	if err = self.storeKey(record.id, offset); err != nil {
 		return errors.Wrap(err, "Falied storing key")
 	}
 
@@ -198,7 +198,7 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 		return nil, errors.Wrap(err, "Failed decoding record: %v")
 	}
 
-	return record.Load(self), nil
+	return record.Load(self, id), nil
 }
 
 func CompareRecordId(x, y RecordId) compare.Order {

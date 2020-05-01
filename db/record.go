@@ -10,7 +10,17 @@ type Field struct {
 }
 
 type Record struct {
+	id RecordId
 	Fields []Field
+}
+
+func NewRecord(id RecordId) *Record {
+	return new(Record).Init(id)
+}
+
+func (self *Record) Init(id RecordId) *Record {
+	self.id = id
+	return self
 }
 
 func (self Record) Compare(other Record) compare.Order {
@@ -68,6 +78,10 @@ func (self Record) Get(column Column) interface{} {
 	}
 
 	return self.Fields[i].Value
+}
+
+func (self *Record) Id() RecordId {
+	return self.id
 }
 
 func (self *Record) Len() int {

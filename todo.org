@@ -8,8 +8,6 @@
 * switch to custom encoding
 ** store integers as text
 * --
-* add Record.id/Id()
-* --
 * add db transactions
 * add templates
 

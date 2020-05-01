@@ -54,13 +54,14 @@ func (self *DB) NewQuantity(resource *Resource, startTime, endTime time.Time) *Q
 
 func (self *DB) StoreQuantity(in *Quantity) error {
 	var out db.Record
+	out.Init(in.id)
 	out.Set(&self.QuantityResource, in.Resource)
 	out.Set(&self.QuantityStartTime, in.StartTime)
 	out.Set(&self.QuantityEndTime, in.EndTime)
 	out.Set(&self.QuantityTotal, in.Total)
 	out.Set(&self.QuantityAvailable, in.Available)
 
-	if err := self.Quantity.Store(in.id, out); err != nil {
+	if err := self.Quantity.Store(out); err != nil {
 		return err
 	}
 

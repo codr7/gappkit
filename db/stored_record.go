@@ -9,8 +9,8 @@ type StoredRecord struct {
 	Fields []StoredField
 }
 
-func (self StoredRecord) Load(table *Table) *Record {
-	out := new(Record)
+func (self StoredRecord) Load(table *Table, id RecordId) *Record {
+	out := NewRecord(id)
 	out.Fields = make([]Field, len(self.Fields))
 	
 	for i, f := range self.Fields {

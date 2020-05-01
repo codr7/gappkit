@@ -68,10 +68,11 @@ func (self *DB) StoreResource(in *Resource) error {
 	}
 
 	var out db.Record
+	out.Init(in.id)
 	out.Set(&self.ResourceCategories, in.Categories)
 	out.Set(&self.ResourceName, in.Name)
 	
-	if err := self.Resource.Store(in.id, out); err != nil {
+	if err := self.Resource.Store(out); err != nil {
 		return err
 	}
 

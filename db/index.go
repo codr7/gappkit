@@ -111,8 +111,8 @@ func (self *Index) Key(record Record) IndexKey {
 	return k
 }
 
-func (self *Index) Add(id RecordId, record Record) bool {
-	return self.AddNode(self.Key(record), id)
+func (self *Index) Add(record Record) bool {
+	return self.AddNode(self.Key(record), record.id)
 }
 
 func (self *Index) AddNode(key IndexKey, value RecordId) bool {
@@ -137,8 +137,8 @@ func (self *Index) Len() uint64 {
 	return self.len
 }
 
-func (self *Index) Remove(id RecordId, record Record) bool {
-	return self.RemoveNode(self.Key(record), id)
+func (self *Index) Remove(record Record) bool {
+	return self.RemoveNode(self.Key(record), record.id)
 }
 
 func (self *Index) RemoveNode(key IndexKey, value RecordId) bool {
