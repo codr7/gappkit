@@ -2,6 +2,7 @@ package core
 
 import (
 	"gappkit/db"
+	"github.com/pkg/errors"
 	"time"
 )
 
@@ -40,6 +41,13 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 			out = append(out, head)
 		}
 		
+		q.Available += available + total
+		q.Total += total
+
+		if q.Available < 0 {
+			return NewOverbook(self, q.StartTime, q.EndTime, q.Available)
+		}
+		
 		out = append(out, q)
 		
 		if q.EndTime.After(endTime) {
@@ -50,7 +58,7 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 
 	for _, q := range out {
 		if err := q.Store(); err != nil {
-			return err
+			return errors.Wrap(err, "Failed storing quantity")
 		}
 	}
 
@@ -63,7 +71,7 @@ func (self *Resource) Store() error {
 	
 	if self.db.Resource.Exists(self.id) {
 		if prev, err = self.db.LoadResource(self.id); err != nil {
-			return err
+			return errors.Wrapf(err, "Failed loading resource: %v", self.id)
 		}		
 	} else {
 		if err = self.db.NewQuantity(self, MinTime, MaxTime, 0, 0).Store(); err != nil {
@@ -85,14 +93,14 @@ func (self *Resource) Store() error {
 
 	if err = self.UpdateQuantity(self.StartTime, self.EndTime, self.Quantity, self.Quantity);
 	err != nil {
-		return err
+		return errors.Wrap(err, "Failed updating quantity")
 	}
 
 	if prev != nil {
 		q := -prev.Quantity
 		
 		if err = prev.UpdateQuantity(prev.StartTime, prev.EndTime, q, q); err != nil {
-			return err
+			return errors.Wrap(err, "Failed reverting quantity update")
 		}
 	}
 
@@ -103,7 +111,7 @@ func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
 	in, err := self.Resource.Load(id)
 	
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrapf(err, "Failed loading resource: %v", id)
 	}
 
 	out := new(Resource).Init(self, id)
