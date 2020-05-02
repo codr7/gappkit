@@ -1,7 +1,9 @@
 package db
 
 import (
+	"bufio"
 	"gappkit/compare"
+	"io"
 )
 
 type RecordColumn struct {
@@ -17,3 +19,10 @@ func (self *RecordColumn) Compare(x, y interface{}) compare.Order {
 	return CompareRecordId(x.(RecordId), y.(RecordId))
 }
 
+func (self *RecordColumn) Decode(in *bufio.Reader) (interface{}, error) {
+	return DecodeUInt(in)
+}
+
+func (self *RecordColumn) Encode(val interface{}, out io.Writer) error {
+	return EncodeRecordId(val.(RecordId), out)
+}

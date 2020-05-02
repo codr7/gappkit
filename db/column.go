@@ -1,13 +1,17 @@
 package db
 
 import (
+	"bufio"
 	"gappkit/compare"
 	"fmt"
+	"io"
 	"reflect"
 )
 
 type Column interface {
 	Compare(x, y interface{}) compare.Order
+	Decode(in *bufio.Reader) (interface{}, error)
+	Encode(val interface{}, out io.Writer) error
 	Get(record Record) interface{}
 	Name() string
 	Set(record Record, val interface{})

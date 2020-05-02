@@ -1,10 +1,11 @@
+* switch to custom db encoding
+** grep/replace gob with Encode/Decode
+* --
+* move Get/Set from Column to Model
 * write to file in Index.Add/Remove
 ** init encoder after loading
-** write RecordId = -1 on Remove
+** write RecordId = 0 on Remove
 *** handle on load
-* --
-* switch to custom db encoding
-** store integers as text
 * --
 * loop Resource.Categories in UpdateQuantity
 ** loop categories recursively (skip recursive self call)
