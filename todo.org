@@ -1,4 +1,3 @@
-* extract Model struct
 * write to file in Index.Add/Remove
 ** init encoder after loading
 ** write RecordId = -1 on Remove

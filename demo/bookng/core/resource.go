@@ -7,8 +7,7 @@ import (
 )
 
 type Resource struct {
-	db *DB
-	id db.RecordId
+	BasicModel
 	Categories db.RecordSet
 	Name string
 	StartTime, EndTime time.Time
@@ -16,13 +15,8 @@ type Resource struct {
 }
 
 func (self *Resource) Init(db *DB, id db.RecordId) *Resource {
-	self.db = db
-	self.id = id
+	self.BasicModel.Init(db, id)
 	return self
-}
-
-func (self *Resource) Id() db.RecordId {
-	return self.id
 }
 
 func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, available int64) error {

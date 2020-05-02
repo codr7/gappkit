@@ -6,21 +6,15 @@ import (
 )
 
 type Quantity struct {
-	db *DB
-	id db.RecordId
+	BasicModel
 	Resource db.RecordId
 	StartTime, EndTime time.Time
 	Total, Available int64
 }
 
 func (self *Quantity) Init(db *DB, id db.RecordId) *Quantity {
-	self.db = db
-	self.id = id
+	self.BasicModel.Init(db, id)
 	return self
-}
-
-func (self *Quantity) Id() db.RecordId {
-	return self.id
 }
 
 func (self *Quantity) Store() error {
