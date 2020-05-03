@@ -12,7 +12,7 @@ import (
 type Index struct {
 	file *os.File
 	keyColumns []Column
-	len uint64
+	len int64
 	name string
 	records *IndexNode
 	root *Root
@@ -132,7 +132,7 @@ func (self *Index) FindLower(key...interface{}) *IndexIter {
 	return NewIndexIter(n)
 }
 
-func (self *Index) Len() uint64 {
+func (self *Index) Len() int64 {
 	return self.len
 }
 

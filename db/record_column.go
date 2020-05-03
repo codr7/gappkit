@@ -20,7 +20,7 @@ func (self *RecordColumn) Compare(x, y interface{}) compare.Order {
 }
 
 func (self *RecordColumn) Decode(in *bufio.Reader) (interface{}, error) {
-	return DecodeUInt(in)
+	return DecodeRecordId(in)
 }
 
 func (self *RecordColumn) Encode(val interface{}, out io.Writer) error {

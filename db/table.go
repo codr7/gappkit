@@ -10,7 +10,7 @@ import (
 	"path"
 )
 
-type RecordId = uint64
+type RecordId = int64
 type Fields = map[string]interface{}
 type Offset = int64
 
@@ -59,7 +59,7 @@ func (self *Table) Open() error {
 		var id RecordId
 		var err error
 		
-		if id, err = DecodeUInt(keyReader); err != nil {
+		if id, err = DecodeInt(keyReader); err != nil {
 			if err == io.EOF {
 				break
 			}
@@ -119,7 +119,7 @@ func (self *Table) NextId() RecordId {
 }
 
 func (self *Table) storeKey(id RecordId, offset Offset) error {
-	if err := EncodeUInt(id, self.keyFile); err != nil {
+	if err := EncodeInt(id, self.keyFile); err != nil {
 		return errors.Wrap(err, "Failed encoding id")
 	}
 
