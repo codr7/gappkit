@@ -1,7 +1,7 @@
 package db
 
 import (
-	"encoding/gob"
+	"bufio"
 	"fmt"
 	"gappkit/compare"
 	"github.com/pkg/errors"
@@ -17,7 +17,6 @@ type Offset = int64
 type Table struct {
 	columns map[string]Column
 	dataFile *os.File
-	keyEncoder *gob.Encoder
 	keyFile *os.File
 	name string
 	nextRecordId RecordId
@@ -54,12 +53,13 @@ func (self *Table) Open() error {
 		return errors.Wrapf(err, "Failed opening file: %v", keyPath)
 	}
 
-	decoder := gob.NewDecoder(self.keyFile)
+	keyReader := bufio.NewReader(self.keyFile)
 	
 	for {
 		var id RecordId
+		var err error
 		
-		if err := decoder.Decode(&id); err != nil {
+		if id, err = DecodeUInt(keyReader); err != nil {
 			if err == io.EOF {
 				break
 			}
@@ -72,15 +72,14 @@ func (self *Table) Open() error {
 		}
 		
 		var offset Offset
-
-		if err := decoder.Decode(&offset); err != nil {
+		
+		if offset, err = DecodeInt(keyReader); err != nil {
 			return errors.Wrap(err, "Failed decoding offset")
 		}
 
 		self.records[id] = offset
 	}
 
-	self.keyEncoder = gob.NewEncoder(self.keyFile)
 	dataPath := path.Join(self.root.path, fmt.Sprintf("%v.dat", self.name))
 
 	if self.dataFile, err = os.OpenFile(dataPath, os.O_CREATE|os.O_RDWR, os.ModePerm); err != nil {
@@ -120,11 +119,11 @@ func (self *Table) NextId() RecordId {
 }
 
 func (self *Table) storeKey(id RecordId, offset Offset) error {
-	if err := self.keyEncoder.Encode(id); err != nil {
+	if err := EncodeUInt(id, self.keyFile); err != nil {
 		return errors.Wrap(err, "Failed encoding id")
 	}
 
-	if err := self.keyEncoder.Encode(offset); err != nil {
+	if err := EncodeInt(offset, self.keyFile); err != nil {
 		return errors.Wrap(err, "Failed encoding offset")
 	}
 
@@ -147,11 +146,19 @@ func (self *Table) storeData(record Record) (Offset, error) {
 	}
 	
 	self.records[record.id] = offset
-	encoder := gob.NewEncoder(self.dataFile)
-	stored := record.Store()
 	
-	if err := encoder.Encode(*stored); err != nil {
-		return -1, errors.Wrap(err, "Failed encoding record")
+	if err := EncodeInt(int64(record.Len()), self.dataFile); err != nil {
+		return -1, errors.Wrap(err, "Failed encoding record length")
+	}
+	
+	for _, f := range record.Fields {
+		if err := EncodeString(f.Column.Name(), self.dataFile); err != nil {
+			return -1, errors.Wrap(err, "Failed encoding field name")
+		}
+
+		if err := f.Column.Encode(f.Value, self.dataFile); err != nil {
+			return -1, errors.Wrap(err, "Failed encoding field value")
+		}		
 	}
 
 	for _, ix := range self.indexes {
@@ -190,15 +197,35 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 	if _, err := self.dataFile.Seek(offset, io.SeekStart); err != nil {
 		return nil, errors.Wrap(err, "Failed seeking data file")
 	}
+
+	var n int
+	var err error
+
+	dataReader := bufio.NewReader(self.dataFile)
 	
-	decoder := gob.NewDecoder(self.dataFile)
-	var record StoredRecord
-	
-	if err := decoder.Decode(&record); err != nil {
-		return nil, errors.Wrap(err, "Failed decoding record: %v")
+	if n, err = DecodeLen(dataReader); err != nil {
+		return nil, errors.Wrap(err, "Failed decoding record")
 	}
 
-	return record.Load(self, id), nil
+	out := NewRecord(id)
+	out.Fields = make([]Field, n)
+
+	for i := 0; i < n; i++ {
+		f := &out.Fields[i]
+		var c string
+		
+		if c, err = DecodeString(dataReader); err != nil {
+			return nil, errors.Wrap(err, "Failed decoding field name")
+		}
+		
+		f.Column = self.FindColumn(c)
+
+		if f.Value, err = f.Column.Decode(dataReader); err != nil {
+			return nil, errors.Wrapf(err, "Failed decoding field value: %v", c)			
+		}
+	}
+	
+	return out, nil
 }
 
 func CompareRecordId(x, y RecordId) compare.Order {

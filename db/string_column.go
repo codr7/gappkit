@@ -20,29 +20,10 @@ func (self *StringColumn) Compare(x, y interface{}) compare.Order {
 }
 
 func (self *StringColumn) Decode(in *bufio.Reader) (interface{}, error) {
-	l, err := DecodeLen(in)
-
-	if err != nil {
-		return nil, err
-	}
-
-	v := make([]byte, l)
-
-	if _, err = in.Read(v); err != nil {
-		return nil, err
-	}
-	
-	return string(v), nil
+	return DecodeString(in)
 }
 
 func (self *StringColumn) Encode(val interface{}, out io.Writer) error {
-	v := []byte(val.(string))
-	
-	if err := EncodeLen(v, out); err != nil {
-		return err
-	}
-
-	_, err := out.Write(v)
-	return err
+	return EncodeString(val.(string), out)
 }
 

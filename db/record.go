@@ -108,16 +108,3 @@ func (self *Record) Set(column Column, value interface{}) {
 		}
 	}
 }
-
-func (self Record) Store() *StoredRecord {
-	out := new(StoredRecord)
-	out.Fields = make([]StoredField, len(self.Fields))
-
-	for i, f := range self.Fields {
-		of := &out.Fields[i]
-		of.Column = f.Column.Name()
-		of.Value = f.Value
-	}
-
-	return out
-}
