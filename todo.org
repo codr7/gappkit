@@ -1,3 +1,4 @@
+* debug time load
 * switch index custom db encoding
 ** grep/replace gob with Encode/Decode
 * write to file in Index.Add/Remove

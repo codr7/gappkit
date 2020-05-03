@@ -32,7 +32,7 @@ func (self *TimeColumn) Decode(in *bufio.Reader) (interface{}, error) {
 		return nil, err
 	}
 
-	return time.Unix(s, ns), nil
+	return time.Unix(s, ns).UTC(), nil
 }
 
 func (self *TimeColumn) Encode(val interface{}, out io.Writer) error {
@@ -42,7 +42,7 @@ func (self *TimeColumn) Encode(val interface{}, out io.Writer) error {
 		return err
 	}
 
-	if err := EncodeInt(v.UnixNano(), out); err != nil {
+	if err := EncodeInt(v.UnixNano() % 1000000000, out); err != nil {
 		return err
 	}
 
