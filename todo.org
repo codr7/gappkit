@@ -1,7 +1,11 @@
+* add db.Load/Store to reflect.go
+** call from Resource/Quantity
+** add Model.Table() method
 * add Booking
 ** start/endTime
 ** add Item
 *** resource/start/endTime/quantity
+** add to tests
 * --
 * loop Resource.Categories in UpdateQuantity
 ** loop categories recursively (skip recursive self call)
