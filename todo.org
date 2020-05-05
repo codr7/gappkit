@@ -1,14 +1,11 @@
-* debug time load
-* switch index custom db encoding
-** grep/replace gob with Encode/Decode
-* write to file in Index.Add/Remove
-** init encoder after loading
-** write RecordId = -1 on Remove
-*** handle on load
-* --
 * move Get/Set from Column to Model
 ** add Model.Load/Store(table)
 *** loop table columns
+* --
+* add Booking
+** start/endTime
+** add Item
+*** resource/start/endTime/quantity
 * --
 * loop Resource.Categories in UpdateQuantity
 ** loop categories recursively (skip recursive self call)

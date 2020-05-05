@@ -15,7 +15,18 @@ func (self *RecordSet) Add(id RecordId) bool {
 		return false
 	}
 
-	self.Insert(i, id)
+	len := self.Len()
+	
+	if i == len {
+		self.Items = append(self.Items, id)
+	} else if i == len-1 {
+		self.Items = append(self.Items[:i], id, self.Items[i])
+	} else {
+		self.Items = append(self.Items, 0)
+		copy(self.Items[i+1:], self.Items[i:])
+		self.Items[i] = id
+	}
+
 	return true
 }
 
@@ -60,20 +71,6 @@ func (self RecordSet) Find(id RecordId) (int, bool) {
 	return min, false
 }
 
-func (self *RecordSet) Insert(i int, id RecordId) {
-	l := self.Len()
-	
-	if i == l {
-		self.Items = append(self.Items, id)
-	} else if i == l-1 {
-		self.Items = append(self.Items[:i], id, self.Items[i])
-	} else {
-		self.Items = append(self.Items, 0)
-		copy(self.Items[i+1:], self.Items[i:])
-		self.Items[i] = id
-	}
-}
-
 func (self RecordSet) Len() int {
 	return len(self.Items)
 }
@@ -85,8 +82,8 @@ func (self *RecordSet) Remove(id RecordId) bool {
 		return false
 	}
 	
-	l := self.Len()
+	len := self.Len()
 	copy(self.Items[i:], self.Items[i+1:])
-	self.Items = self.Items[:l-1]	
+	self.Items = self.Items[:len-1]	
 	return true
 }

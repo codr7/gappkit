@@ -13,18 +13,18 @@ func EncodeInt(val int64, out io.Writer) error {
 }
 
 func DecodeInt(in *bufio.Reader) (int64, error) {
-	l, err := in.ReadByte()
+	n, err := in.ReadByte()
 	
 	if err != nil {
 		return -1, err
 	}
 
-	v := make([]byte, l)
+	v := make([]byte, n)
 	
 	if _, err = in.Read(v); err != nil {
 		return -1, err
 	}
-	
+
 	return strconv.ParseInt(string(v), 10, 64)
 }
 

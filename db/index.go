@@ -1,9 +1,10 @@
 package db
 
 import (
-	"encoding/gob"
+	"bufio"
 	"fmt"
 	"gappkit/compare"
+	"github.com/pkg/errors"
 	"io"
 	"os"
 	"path"
@@ -14,26 +15,21 @@ type Index struct {
 	keyColumns []Column
 	len int64
 	name string
-	records *IndexNode
+	items []IndexItem
 	root *Root
 	unique bool
 }
 
-type IndexKey []interface{}
-type IndexValue []RecordId
-
-type IndexNode struct {
-	left, right *IndexNode
+type IndexItem struct {
 	key IndexKey
-	value IndexValue
-	red bool
+	value RecordId
 }
 
+type IndexKey []interface{}
+
 type IndexIter struct {
-	current *IndexNode
-	next *IndexNode
-	stack []*IndexNode
-	valueIndex int
+	index *Index
+	i int
 }
 
 func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Column) {
@@ -41,6 +37,36 @@ func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Colum
 	self.name = name
 	self.unique = unique
 	self.keyColumns = keyColumns	
+}
+
+func (self *Index) loadKey(in *bufio.Reader) (IndexKey, error) {
+	k := make(IndexKey, len(self.keyColumns))
+	
+	for i, c := range self.keyColumns {
+		v, err := c.Decode(in)
+
+		if err != nil {
+			if err == io.EOF {
+				return nil, err
+			}
+
+			return nil, errors.Wrap(err, "Failed decoding key")
+		}
+
+		k[i] = v
+	}
+
+	return k, nil
+}
+
+func (self *Index) loadValue(in *bufio.Reader) (RecordId, error) {
+	v, err := DecodeRecordId(in)
+	
+	if err != nil {
+		return -1, errors.Wrap(err, "Failed decoding value")
+	}
+
+	return v, nil
 }
 
 func (self *Index) Open() error {
@@ -51,31 +77,31 @@ func (self *Index) Open() error {
 		return err
 	}
 
-	decoder := gob.NewDecoder(self.file)
+	reader := bufio.NewReader(self.file)
 	
 	for {
 		var key IndexKey
-		
-		if err := decoder.Decode(&key); err != nil {
+
+		key, err := self.loadKey(reader)
+
+		if err != nil {
 			if err == io.EOF {
 				break
 			}
 			
-			return fmt.Errorf("Failed decoding key: %v", err)
+			return err
 		}
 
-		var value IndexValue
+		var val RecordId
 		
-		if err := decoder.Decode(&value); err != nil {
-			if err == io.EOF {
-				break
-			}
-			
-			return fmt.Errorf("Failed decoding id: %v", err)
+		if val, err = self.loadValue(reader); err != nil {
+			return err
 		}
 
-		for _, v := range value {
-			self.AddNode(key, v)
+		if val < 0 {
+			self.remove(key, -val)
+		} else {
+			self.add(key, val)
 		}
 	}
 
@@ -84,7 +110,7 @@ func (self *Index) Open() error {
 
 func (self *Index) Close() error {
 	if err := self.file.Close(); err != nil {
-		return err
+		return errors.Wrap(err, "Failed closing file")
 	}
 
 	return nil
@@ -110,53 +136,149 @@ func (self *Index) Compare(x, y IndexKey) compare.Order {
 	return compare.Eq
 }
 
-func (self *Index) Add(record Record) bool {
-	return self.AddNode(self.Key(record), record.id)
+func (self *Index) storeKey(key IndexKey) error {
+	for i, c := range self.keyColumns {
+		if err := c.Encode(key[i], self.file); err != nil {
+			return errors.Wrap(err, "Failed encoding key")
+		}
+	}
+
+	return nil
 }
 
-func (self *Index) AddNode(key IndexKey, value RecordId) bool {
-	var ok bool
-	self.records, ok = self.addNode(self.records, key, value)
-	self.records.red = false
-	return ok
+func (self *Index) storeValue(val RecordId) error {
+	if err := EncodeRecordId(val, self.file); err != nil {
+		return errors.Wrap(err, "Failed encoding value")
+	}
+
+	return nil
 }
 
-func (self *Index) Find(key IndexKey) IndexValue {
-	n := self.findNode(self.records, key)
-	if n == nil { return nil }
-	return n.value
+func (self *Index) Add(record Record) (bool, error) {
+	key := self.Key(record)
+	
+	if !self.add(key, record.id) {
+		return false, nil
+	}
+	
+	if err := self.storeKey(key); err != nil {
+		return false, err
+	}
+	
+	if err := self.storeValue(record.id); err != nil {
+		return false, err
+	}
+	
+	return true, nil
+}
+
+func (self Index) find(key IndexKey) (int, bool) {
+	min, max := 0, self.Len()
+
+	for min < max {
+		i := (min+max) / 2
+
+		switch self.Compare(key, self.items[i].key) {		
+			case compare.Lt:
+				max = i
+			case compare.Gt:
+				min = i+1
+			default:
+				return i, true
+		}
+	}
+
+	return min, false
+}
+
+func (self *Index) add(key IndexKey, value RecordId) bool {
+	i, ok := self.find(key)
+
+	if ok && self.unique {
+		return false
+	}
+
+	it := IndexItem{key: key, value: value}
+	len := self.Len()
+	
+	if i == len {
+		self.items = append(self.items, it)
+	} else if i == len-1 {
+		self.items = append(self.items[:i], it, self.items[i])
+	} else {
+		self.items = append(self.items, it)
+		copy(self.items[i+1:], self.items[i:])
+		self.items[i] = it
+	}
+
+	return true
+}
+
+func (self *Index) Find(key IndexKey) RecordId {
+	i, ok := self.find(key)
+
+	if !ok {
+		return -1
+	}
+
+	return self.items[i].value
 }
 
 func (self *Index) FindLower(key...interface{}) *IndexIter {
-	n := self.findLowerNode(self.records, IndexKey(key))
-	return NewIndexIter(n)
+	i, _ := self.find(key)
+
+	for i > 0 && self.Compare(self.items[i].key, key) != compare.Lt {
+		i--
+	}
+
+	return self.NewIter(i)
 }
 
-func (self *Index) Len() int64 {
-	return self.len
+func (self *Index) Len() int {
+	return len(self.items)
 }
 
-func (self *Index) Remove(record Record) bool {
-	return self.RemoveNode(self.Key(record), record.id)
-}
-
-func (self *Index) RemoveNode(key IndexKey, value RecordId) bool {
-	var ok bool
-	self.records, ok = self.removeNode(self.records, key, value)
-
-	if self.records != nil {
-		self.records.red = false
+func (self *Index) Remove(record Record) (bool, error) {
+	key := self.Key(record)
+	
+	if !self.remove(key, record.id) {
+		return false, nil
 	}
 	
-	return ok
+	if err := self.storeKey(key); err != nil {
+		return false, err
+	}
+	
+	if err := self.storeValue(-record.id); err != nil {
+		return false, err
+	}
+	
+	return true, nil
 }
 
-func (self *Index) removeValue(node *IndexNode, value RecordId) bool {
-	self.len--
+func (self *Index) remove(key IndexKey, value RecordId) bool {
+	i, ok := self.find(key)	
+
+	if !ok {
+		return false
+	}
+
+	j := i
 	
-	for i, v := range node.value {
-		if v == value {
-			node.value = append(node.value[:i], node.value[i+1:]...)
+	for i > 0 && self.Compare(self.items[i-1].key, key) == compare.Eq {
+		i--
+	}
+
+	len := self.Len()
+
+	for j < len && self.Compare(self.items[j+1].key, key) == compare.Eq {
+		j++
+	}
+
+	for k := i; k < j; k++ {
+		if self.items[k].value == value {
+			copy(self.items[k:], self.items[k+1:])
+			self.items = self.items[:len-1]	
 			return true
 		}
 	}
@@ -164,218 +286,24 @@ func (self *Index) removeValue(node *IndexNode, value RecordId) bool {
 	return false
 }
 
-func (self *Index) removeNode(node *IndexNode, key IndexKey, value RecordId) (*IndexNode, bool) {
-	var ok bool
-
-	if self.Compare(key, node.key) == compare.Lt {
-		if !node.left.isRed() && !node.left.left.isRed() {
-			node = node.moveRedLeft()
-		}
-
-		node.left, ok = self.removeNode(node.left, key, value)
-	} else {
-		if node.left.isRed() {
-			node = node.rotr()
-		}
-
-		if self.Compare(key, node.key) == compare.Eq && node.right == nil {
-			ok := self.removeValue(node, value)
-
-			if ok && len(node.value) == 0 {
-				node = nil
-			}
-			
-			return node, ok
-		}
-
-		if !node.right.isRed() && !node.right.left.isRed() {
-			node.flip()
-
-			if node.left.left.isRed() {
-				node = node.rotr()
-				node.flip()
-			}
-		}
-
-		if self.Compare(key, node.key) == compare.Eq {
-			ok := self.removeValue(node, value)
-			
-			if ok && len(node.value) > 0 {
-				return node, true
-			}
-			
-			l := node.left
-			var r *IndexNode
-			r, node = node.right.removeMin()
-			node.left = l
-			node.right = r
-		} else {
-			node.right, ok = self.removeNode(node.right, key, value)
-		}
-	}
-	
-	return node.fix(), ok
-}
-
-func (self *Index) addNode(node *IndexNode, key IndexKey, value RecordId) (*IndexNode, bool) {
-	if node == nil {
-		node = &IndexNode{key: key, value: IndexValue{value}, red: true}
-		self.len++
-		return node, true
-	}
-
-	var ok bool
-
-	switch self.Compare(key, node.key) {
-	case compare.Lt:
-		node.left, ok = self.addNode(node.left, key, value)
-	case compare.Gt:
-		node.right, ok = self.addNode(node.right, key, value)
-	default:
-		if self.unique {
-			return node, false
-		}
-		
-		node.value = append(node.value, value)
-		self.len++
-		return node, true
-	}
-
-	return node.fix(), ok
-}
-
-func (self *Index) findNode(node *IndexNode, key IndexKey) *IndexNode {
-	for node != nil {
-		switch self.Compare(key, node.key) {
-		case compare.Lt:
-			node = node.left
-		case compare.Gt:
-			node = node.right
-		default:
-			return node
-		}
-	}
-
-	return nil
-}
-
-func (self *Index) findLowerNode(node *IndexNode, key IndexKey) *IndexNode {
-	for node != nil {
-		switch self.Compare(key, node.key) {
-		case compare.Lt:
-			node = node.left
-		default:
-			return node
-		}
-	}
-
-	return nil
-}
-
-func (self *IndexNode) fix() *IndexNode {
-	if (self.right.isRed()) {
-		self = self.rotl()
-	}
-
-	if (self.left.isRed() && self.left.left.isRed()) {
-		self = self.rotr()
-	}
-
-	if (self.left.isRed() && self.right.isRed()) {
-		self.flip()
-	}
-
-	return self
-}
-
-func (self *IndexNode) flip() {
-	self.red = !self.red
-	self.left.red = !self.left.red
-	self.right.red = !self.right.red
-}
-
-func (self *IndexNode) isRed() bool {
-	return self != nil && self.red
-}
-
-func (self *IndexNode) moveRedLeft() *IndexNode {
-	self.flip()
-
-	if self.right.left.isRed() {
-		self.right = self.right.rotr()
-		self = self.rotl()
-		self.flip()
-	}
-
-	return self
-}
-
-func (self *IndexNode) removeMin() (*IndexNode, *IndexNode) {
-	if self.left == nil {
-		return nil, self
-	}
-
-	if !self.left.isRed() && !self.left.left.isRed() {
-		self = self.moveRedLeft()
-	}
-
-	var out *IndexNode
-	self.left, out = self.left.removeMin()
-	return self.fix(), out
-}
-
-func (self *IndexNode) rotl() *IndexNode {
-	r := self.right
-	self.right = r.left
-	r.left = self
-	r.red = self.red
-	self.red = true
-	return r
-}
-
-func (self *IndexNode) rotr() *IndexNode {
-	l := self.left
-	self.left = l.right
-	l.right = self
-	l.red = self.red
-	self.red = true
-	return l
-}
-
-func NewIndexIter(node *IndexNode) *IndexIter {
-	return &IndexIter{next: node}
+func (self *Index) NewIter(i int) *IndexIter {
+	return &IndexIter{index: self, i: i}
 }
 
 func (self *IndexIter) Key(i int) interface{} {
-	return self.current.key[i]
+	return self.index.items[self.i]
 }
 
 func (self *IndexIter) Next() bool {
-	self.valueIndex++
-	
-	if self.current == nil || self.valueIndex >= len(self.current.value) {
-		for self.next != nil {
-			self.stack = append(self.stack, self.next)
-			self.next = self.next.left
-		}
-		
-		i := len(self.stack)-1
-		
-		if i == -1 {
-			self.current = nil
-			return false
-		}
-		
-		var n *IndexNode
-		n, self.stack = self.stack[i], self.stack[:i]
-		self.next = n.right
-		self.current = n
-		self.valueIndex = 0
+	self.i++
+
+	if self.i >= len(self.index.items) {
+		return false
 	}
-	
+
 	return true
 }
 
 func (self *IndexIter) Value() RecordId {
-	return self.current.value[self.valueIndex]
+	return self.index.items[self.i].value
 }

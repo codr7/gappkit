@@ -130,21 +130,23 @@ func (self *Table) storeKey(id RecordId, offset Offset) error {
 	return nil
 }
 
-func (self *Table) storeData(record Record) (Offset, error) {
+func (self *Table) storeData(record Record) (Offset, error) {	
+	if prev, err := self.Load(record.id); err != nil {
+		return -1, errors.Wrap(err, "Failed loading record")
+	} else if prev != nil {
+		for _, ix := range self.indexes {
+			if _, err := ix.Remove(*prev); err != nil {
+				return -1, errors.Wrapf(err, "Failed adding to index: %v", ix.name)
+			}
+		}
+	}
+	
 	offset, err := self.dataFile.Seek(0, io.SeekEnd)
 
 	if err != nil {
 		return -1, errors.Wrap(err, "Failed seeking data file")
 	}
 
-	if prev, err := self.Load(record.id); err != nil {
-		return -1, errors.Wrap(err, "Failed loading record")
-	} else if prev != nil {
-		for _, ix := range self.indexes {
-			ix.Remove(*prev)
-		}
-	}
-	
 	self.records[record.id] = offset
 	
 	if err := EncodeInt(int64(record.Len()), self.dataFile); err != nil {
@@ -162,7 +164,11 @@ func (self *Table) storeData(record Record) (Offset, error) {
 	}
 
 	for _, ix := range self.indexes {
-		ix.Add(record)
+		if ok, err := ix.Add(record); err != nil {
+			return -1, errors.Wrapf(err, "Failed adding to index: %v", ix.name)
+		} else if !ok {
+			return -1, errors.New(fmt.Sprintf("Duplicate key in index: %v", ix.name))
+		}
 	}
 	
 	return offset, nil
@@ -174,6 +180,7 @@ func (self *Table) Store(record Record) error {
 	if err != nil {
 		return errors.Wrap(err, "Failed storing data")
 	}
+
 
 	if err = self.storeKey(record.id, offset); err != nil {
 		return errors.Wrap(err, "Falied storing key")
@@ -193,7 +200,7 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 	if !ok {
 		return nil, nil
 	}
-	
+
 	if _, err := self.dataFile.Seek(offset, io.SeekStart); err != nil {
 		return nil, errors.Wrap(err, "Failed seeking data file")
 	}
@@ -224,7 +231,7 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 			return nil, errors.Wrapf(err, "Failed decoding field value: %v", c)			
 		}
 	}
-	
+
 	return out, nil
 }
 

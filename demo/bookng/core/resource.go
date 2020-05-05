@@ -31,8 +31,11 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 		}
 		
 		if q.StartTime.Before(startTime) {
-			head := self.db.NewQuantity(self, q.StartTime, startTime, q.Total, q.Available)
-			out = append(out, head)
+			head := *q
+			head.StartTime = q.StartTime
+			head.EndTime = startTime
+			out = append(out, &head)
+			q = self.db.NewQuantity(self, startTime, q.EndTime, q.Total, q.Available)
 		}
 		
 		q.Available += available + total
