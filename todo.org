@@ -9,7 +9,6 @@
 * --
 * loop Resource.Categories in UpdateQuantity
 ** loop categories recursively (skip recursive self call)
-** extract tests from main
 * --
 * add db transactions
 * add templates

@@ -14,19 +14,4 @@ func main() {
 	}
 	
 	defer db.Close()
-	
-	r := db.NewResource()
-	r.Name = "foo"
-
-	if err := r.Store(); err != nil {
-		log.Fatalf("%+v", err)
-	}
-
-	lr, err := db.LoadResource(r.Id())
-
-	if err != nil {
-		log.Fatal("%+v", err)
-	}
-	
-	log.Printf("%v\n", lr)
 }

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"github.com/pkg/errors"
 	"os"
 )
 
@@ -20,6 +21,14 @@ func (self *Root) Init(path string) *Root {
 
 func (self *Root) AddTable(table *Table) {
 	self.tables = append(self.tables, table)
+}
+
+func (self *Root) Drop() error {
+	if err := os.RemoveAll(self.path); err != nil {
+		return errors.Wrap(err, "Failed dropping database") 
+	}
+
+	return nil
 }
 
 func (self *Root) Open() error {
