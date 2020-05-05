@@ -20,7 +20,7 @@ func (self *Resource) Init(db *DB, id db.RecordId) *Resource {
 }
 
 func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, available int64) error {
-	in := self.db.QuantityIndex.FindLower(self.id, startTime)
+	in := self.db.QuantityIndex.FindLower(self.Id(), startTime)
 	var out []*Quantity
 	
 	for in.Next() && in.Key(1).(time.Time).Before(endTime) {
@@ -66,9 +66,9 @@ func (self *Resource) Store() error {
 	var prev *Resource
 	var err error
 	
-	if self.db.Resource.Exists(self.id) {
-		if prev, err = self.db.LoadResource(self.id); err != nil {
-			return errors.Wrapf(err, "Failed loading resource: %v", self.id)
+	if self.db.Resource.Exists(self.Id()) {
+		if prev, err = self.db.LoadResource(self.Id()); err != nil {
+			return errors.Wrapf(err, "Failed loading resource: %v", self.Id())
 		}		
 	} else {
 		if err = self.db.NewQuantity(self, MinTime, MaxTime, 0, 0).Store(); err != nil {
@@ -77,13 +77,12 @@ func (self *Resource) Store() error {
 	}
 
 	var out db.Record
-	out.Init(self.id)
-	out.Set(&self.db.ResourceCategories, self.Categories)
-	out.Set(&self.db.ResourceName, self.Name)
-	out.Set(&self.db.ResourceStartTime, self.StartTime)
-	out.Set(&self.db.ResourceEndTime, self.EndTime)
-	out.Set(&self.db.ResourceQuantity, self.Quantity)
+	out.Init(self.Id())
 	
+	if err = self.db.Resource.CopyFromModel(self, &out); err != nil {
+		return err
+	}
+
 	if err = self.db.Resource.Store(out); err != nil {
 		return err
 	}
@@ -112,17 +111,17 @@ func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
 	}
 
 	out := new(Resource).Init(self, id)
-	out.Name = in.Get(&self.ResourceName).(string)
-	out.Categories = in.Get(&self.ResourceCategories).(db.RecordSet)
-	out.StartTime = in.Get(&self.ResourceStartTime).(time.Time)
-	out.EndTime = in.Get(&self.ResourceEndTime).(time.Time)
-	out.Quantity = in.Get(&self.ResourceQuantity).(int64)
+
+	if err = self.Resource.CopyToModel(*in, out); err != nil {
+		return nil, err
+	}
+	
 	return out, nil
 }
 
 func (self *DB) NewResource() *Resource {
 	r := new(Resource).Init(self, self.Resource.NextId())
-	r.Categories.Add(r.id)
+	r.Categories.Add(r.Id())
 	r.StartTime = MinTime
 	r.EndTime = MaxTime
 	r.Quantity = 1

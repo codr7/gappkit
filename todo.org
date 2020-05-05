@@ -1,7 +1,3 @@
-* move Get/Set from Column to Model
-** add Model.Load/Store(table)
-*** loop table columns
-* --
 * add Booking
 ** start/endTime
 ** add Item
