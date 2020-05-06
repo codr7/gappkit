@@ -3,12 +3,14 @@
 ** add Item
 *** resource/start/endTime/quantity
 ** add to tests
-* --
 * loop Resource.Categories in UpdateQuantity
 ** loop categories recursively (skip recursive self call)
-* --
+* add Product with optional ResourceId
+** add Charge
+*** ChargeTime, Product, Amount & optional Item
+** update quantity on resource if set
+*** from ChargeTime to MaxTime
 * add db transactions
 * add templates
-
-
-
+** pull fragments and run through text template
+** <go items>...{{.Foo}}...</go>
