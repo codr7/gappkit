@@ -45,6 +45,10 @@ func (self *Table) FindColumn(name string) Column {
 	return self.columns[name]
 }
 
+func (self *Table) Name() string {
+	return self.name
+}
+
 func (self *Table) Open() error {
 	var err error
 	keyPath := path.Join(self.root.path, fmt.Sprintf("%v.key", self.name))

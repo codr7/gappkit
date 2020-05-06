@@ -76,19 +76,11 @@ func (self *Resource) Store() error {
 		}
 	}
 
-	var out db.Record
-	out.Init(self.Id())
+	if err = db.Store(self); err != nil {
+		return err
+	}
 	
-	if err = self.db.Resource.CopyFromModel(self, &out); err != nil {
-		return err
-	}
-
-	if err = self.db.Resource.Store(out); err != nil {
-		return err
-	}
-
-	if err = self.UpdateQuantity(self.StartTime, self.EndTime, self.Quantity, self.Quantity);
-	err != nil {
+	if err = self.UpdateQuantity(self.StartTime, self.EndTime, self.Quantity, self.Quantity); err != nil {
 		return errors.Wrap(err, "Failed updating quantity")
 	}
 
@@ -103,16 +95,14 @@ func (self *Resource) Store() error {
 	return nil
 }
 
+func (self *Resource) Table() *db.Table {
+	return &self.db.Resource
+}
+
 func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
-	in, err := self.Resource.Load(id)
-	
-	if err != nil {
-		return nil, errors.Wrapf(err, "Failed loading resource: %v", id)
-	}
-
 	out := new(Resource).Init(self, id)
-
-	if err = self.Resource.CopyToModel(*in, out); err != nil {
+	
+	if err := db.Load(out); err != nil {
 		return nil, err
 	}
 	

@@ -18,30 +18,17 @@ func (self *Quantity) Init(db *DB, id db.RecordId) *Quantity {
 }
 
 func (self *Quantity) Store() error {
-	var out db.Record
-	out.Init(self.Id())
-	
-	if err := self.db.Quantity.CopyFromModel(self, &out); err != nil {
-		return err
-	}
+	return db.Store(self)
+}
 
-	if err := self.db.Quantity.Store(out); err != nil {
-		return err
-	}
-
-	return nil
+func (self *Quantity) Table() *db.Table {
+	return &self.db.Quantity
 }
 
 func (self *DB) LoadQuantity(id db.RecordId) (*Quantity, error) {
-	in, err := self.Quantity.Load(id)
-
-	if err != nil {
-		return nil, err
-	}
-
 	out := new(Quantity).Init(self, id)
 
-	if err = self.Quantity.CopyToModel(*in, out); err != nil {
+	if err := db.Load(out); err != nil {
 		return nil, err
 	}
 

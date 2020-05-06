@@ -3,6 +3,7 @@ package db
 type Model interface {
 	Id() RecordId
 	Store() error
+	Table() *Table
 }
 
 type BasicModel struct {

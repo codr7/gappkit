@@ -48,3 +48,37 @@ func Set(target Model, fieldName string, val interface{}) error {
 	f.Set(v)
 	return nil
 }
+
+func Load(out Model) error {
+	t := out.Table()
+	id := out.Id()
+	
+	in, err := t.Load(id)
+	
+	if err != nil {
+		return errors.Wrapf(err, "Failed loading model: %v/%v", t.Name(), id)
+	}
+
+	if err = t.CopyToModel(*in, out); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func Store(in Model) error {
+	var out Record
+	out.Init(in.Id())
+	t := in.Table()
+	
+	if err := t.CopyFromModel(in, &out); err != nil {
+		return err
+	}
+
+	if err := t.Store(out); err != nil {
+		return err
+	}
+
+	return nil
+}
+

@@ -1,6 +1,3 @@
-* add db.Load/Store to reflect.go
-** call from Resource/Quantity
-** add Model.Table() method
 * add Booking
 ** start/endTime
 ** add Item
