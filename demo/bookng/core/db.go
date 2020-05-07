@@ -6,14 +6,13 @@ import (
 
 type DB struct {
 	db.Root
+	
 	Quantity db.Table
-
 	QuantityResource db.RecordColumn
 	QuantityStartTime db.TimeColumn
 	QuantityEndTime db.TimeColumn
 	QuantityTotal db.Int64Column
 	QuantityAvailable db.Int64Column
-
 	QuantityIndex db.Index
 	
 	Resource db.Table
@@ -22,8 +21,13 @@ type DB struct {
 	ResourceStartTime db.TimeColumn
 	ResourceEndTime db.TimeColumn
 	ResourceQuantity db.Int64Column
-	
 	ResourceNameIndex db.Index
+
+	Item db.Table
+	ItemResource db.RecordColumn
+	ItemStartTime db.TimeColumn
+	ItemEndTime db.TimeColumn
+	ItemQuantity db.Int64Column
 }
 
 func NewDB(path string) *DB {
@@ -50,5 +54,11 @@ func NewDB(path string) *DB {
 	self.ResourceNameIndex.Init(&self.Root, "resource_name", true, &self.ResourceName)
 	self.Resource.AddIndex(&self.ResourceNameIndex)
 
+	self.AddTable(self.Item.Init(&self.Root, "item"))
+	self.Item.AddColumn(self.ItemResource.Init("Resource"))
+	self.Item.AddColumn(self.ItemStartTime.Init("StartTime"))
+	self.Item.AddColumn(self.ItemEndTime.Init("EndTime"))
+	self.Item.AddColumn(self.ItemQuantity.Init("Quantity"))
+	
 	return self
 }

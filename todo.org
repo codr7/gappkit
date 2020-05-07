@@ -1,8 +1,5 @@
-* add Booking
-** start/endTime
-** add Item
-*** resource/start/endTime/quantity
-** add to tests
+* fix quantity dup key
+** test should signal overbook
 * loop Resource.Categories in UpdateQuantity
 ** loop categories recursively (skip recursive self call)
 * add Product with optional ResourceId

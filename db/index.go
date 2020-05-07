@@ -227,8 +227,12 @@ func (self *Index) Find(key IndexKey) RecordId {
 func (self *Index) FindLower(key...interface{}) *IndexIter {
 	i, _ := self.find(key)
 
-	for i > 0 && self.Compare(self.items[i].key, key) != compare.Lt {
+	for {
 		i--
+		
+		if i < 0 || self.Compare(self.items[i].key, key) == compare.Lt {
+			break
+		}
 	}
 
 	return self.NewIter(i)
@@ -290,14 +294,14 @@ func (self *Index) NewIter(i int) *IndexIter {
 	return &IndexIter{index: self, i: i}
 }
 
-func (self *IndexIter) Key(i int) interface{} {
-	return self.index.items[self.i]
+func (self *IndexIter) Key(j int) interface{} {
+	return self.index.items[self.i].key[j]
 }
 
 func (self *IndexIter) Next() bool {
 	self.i++
 
-	if self.i >= len(self.index.items) {
+	if self.i >= self.index.Len() {
 		return false
 	}
 

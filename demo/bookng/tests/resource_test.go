@@ -39,6 +39,20 @@ func TestInitQuantity(t *testing.T) {
 	if err := r.Store(); err != nil {
 		fail(t, err)
 	}
+
+	i := db.NewItem()
+	i.Resource = r.Id()
+
+	if err := i.Store(); err != nil {
+		fail(t, err)
+	}
+
+	i = db.NewItem()
+	i.Resource = r.Id()
+
+	if err := i.Store(); err != nil {
+		fail(t, err)
+	}
 }
 
 func TestUpdateQuantity(t *testing.T) {
