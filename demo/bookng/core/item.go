@@ -53,7 +53,7 @@ func (self *Item) Store() error {
 	if resource, err = self.db.LoadResource(self.Resource); err != nil {
 		return err
 	}
-	
+
 	if err = resource.UpdateQuantity(self.StartTime, self.EndTime, 0, -self.Quantity); err != nil {
 		return errors.Wrap(err, "Failed updating quantity")
 	}

@@ -54,22 +54,3 @@ func TestInitQuantity(t *testing.T) {
 		fail(t, err)
 	}
 }
-
-func TestUpdateQuantity(t *testing.T) {
-	setup(t)
-	defer teardown(t)
-	
-	r := db.NewResource()
-	r.Name = "foo"
-	
-	if err := r.Store(); err != nil {
-		fail(t, err)
-	}
-
-	/*
-	lr, err := db.LoadResource(r.Id())
-
-	if err != nil {
-		fail(t, err)
-	}*/
-}

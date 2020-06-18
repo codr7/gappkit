@@ -3,7 +3,6 @@ package core
 import (
 	"gappkit/db"
 	"github.com/pkg/errors"
-	"log"
 	"time"
 )
 
@@ -30,29 +29,26 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 		if err != nil {
 			return err
 		}
-		
+
+		out = append(out, q)
+
 		if q.StartTime.Before(startTime) {
-			head := *q
-			head.StartTime = q.StartTime
-			head.EndTime = startTime
-			out = append(out, &head)
-			q = self.db.NewQuantity(self, startTime, q.EndTime, q.Total, q.Available)
+			head := self.db.NewQuantity(self, q.StartTime, startTime, q.Total, q.Available)
+			out = append(out, head)
+			q.StartTime = startTime
 		}
 		
-		q.Available += available + total
+		q.Available += available
 		q.Total += total
 
-		log.Printf("available: %v\n", q.Available)
-		
 		if q.Available < 0 {
 			return NewOverbook(self, q.StartTime, q.EndTime, q.Available)
 		}
-		
-		out = append(out, q)
-		
+				
 		if q.EndTime.After(endTime) {
 			tail := self.db.NewQuantity(self, endTime, q.EndTime, q.Total, q.Available)
 			out = append(out, tail)
+			q.EndTime = endTime
 		}
 	}
 

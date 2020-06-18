@@ -188,7 +188,7 @@ func (self Index) find(key IndexKey) (int, bool) {
 		}
 	}
 
-	return min, false
+	return max, false
 }
 
 func (self *Index) add(key IndexKey, value RecordId) bool {
@@ -227,15 +227,15 @@ func (self *Index) Find(key IndexKey) RecordId {
 func (self *Index) FindLower(key...interface{}) *IndexIter {
 	i, _ := self.find(key)
 
-	for {
+	for i > 0 {
 		i--
 		
-		if i < 0 || self.Compare(self.items[i].key, key) == compare.Lt {
-			break
+		if self.Compare(key, self.items[i].key) == compare.Gt {
+			break;
 		}
 	}
 
-	return self.NewIter(i)
+	return self.NewIter(i-1)
 }
 
 func (self *Index) Len() int {
@@ -275,11 +275,11 @@ func (self *Index) remove(key IndexKey, value RecordId) bool {
 
 	len := self.Len()
 
-	for j < len && self.Compare(self.items[j+1].key, key) == compare.Eq {
+	for j+1 < len && self.Compare(self.items[j+1].key, key) == compare.Eq {
 		j++
 	}
 
-	for k := i; k < j; k++ {
+	for k := i; k <= j; k++ {
 		if self.items[k].value == value {
 			copy(self.items[k:], self.items[k+1:])
 			self.items = self.items[:len-1]	

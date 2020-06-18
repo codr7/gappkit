@@ -1,5 +1,4 @@
-* fix quantity dup key
-** test should signal overbook
+* extract overbook test
 * loop Resource.Categories in UpdateQuantity
 ** loop categories recursively (skip recursive self call)
 * add Product with optional ResourceId

@@ -140,7 +140,7 @@ func (self *Table) storeData(record Record) (Offset, error) {
 	} else if prev != nil {
 		for _, ix := range self.indexes {
 			if _, err := ix.Remove(*prev); err != nil {
-				return -1, errors.Wrapf(err, "Failed adding to index: %v", ix.name)
+				return -1, errors.Wrapf(err, "Failed removing from index: %v", ix.name)
 			}
 		}
 	}
