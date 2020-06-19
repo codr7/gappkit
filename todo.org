@@ -1,6 +1,7 @@
-* extract overbook test
 * loop Resource.Categories in UpdateQuantity
 ** loop categories recursively (skip recursive self call)
+** add category test
+*** add Resource.AvailableQuantity(start, end)
 * add Product with optional ResourceId
 ** add Charge
 *** ChargeTime, Product, Amount & optional Item

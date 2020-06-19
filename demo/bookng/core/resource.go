@@ -42,7 +42,7 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 		q.Total += total
 
 		if q.Available < 0 {
-			return NewOverbook(self, q.StartTime, q.EndTime, q.Available)
+			return NewOverbook(self, q.StartTime, q.EndTime)
 		}
 				
 		if q.EndTime.After(endTime) {

@@ -2,6 +2,7 @@ package tests
 
 import (
 	"gappkit/demo/bookng/core"
+	"github.com/pkg/errors"
 	"testing"
 )
 
@@ -46,11 +47,31 @@ func TestInitQuantity(t *testing.T) {
 	if err := i.Store(); err != nil {
 		fail(t, err)
 	}
+}
 
-	i = db.NewItem()
+func TestOverbook(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+	
+	r := db.NewResource()
+	r.Name = "foo"
+	
+	if err := r.Store(); err != nil {
+		fail(t, err)
+	}
+
+	i := db.NewItem()
 	i.Resource = r.Id()
 
 	if err := i.Store(); err != nil {
 		fail(t, err)
+	}
+
+	i = db.NewItem()
+	i.Resource = r.Id()
+
+	var ob *core.Overbook
+	if !errors.As(i.Store(), &ob) {
+		t.Fatal()
 	}
 }
