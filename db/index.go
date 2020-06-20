@@ -127,8 +127,8 @@ func (self *Index) Key(record Record) IndexKey {
 }
 
 func (self *Index) Compare(x, y IndexKey) compare.Order {
-	for i, c := range self.keyColumns {
-		if result := c.Compare(x[i], y[i]); result != compare.Eq {
+	for i, xv := range x {
+		if result := self.keyColumns[i].Compare(xv, y[i]); result != compare.Eq {
 			return result
 		}
 	}
@@ -235,7 +235,11 @@ func (self *Index) FindLower(key...interface{}) *IndexIter {
 		}
 	}
 
-	return self.NewIter(i-1)
+	if i == 0 {
+		i--
+	}
+	
+	return self.NewIter(i)
 }
 
 func (self *Index) Len() int {
@@ -269,13 +273,13 @@ func (self *Index) remove(key IndexKey, value RecordId) bool {
 
 	j := i
 	
-	for i > 0 && self.Compare(self.items[i-1].key, key) == compare.Eq {
+	for i > 0 && self.Compare(key, self.items[i-1].key) == compare.Eq {
 		i--
 	}
 
 	len := self.Len()
 
-	for j+1 < len && self.Compare(self.items[j+1].key, key) == compare.Eq {
+	for j+1 < len && self.Compare(key, self.items[j+1].key) == compare.Eq {
 		j++
 	}
 

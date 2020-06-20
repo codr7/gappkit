@@ -47,6 +47,24 @@ func TestInitQuantity(t *testing.T) {
 	if err := i.Store(); err != nil {
 		fail(t, err)
 	}
+
+	if q, err := r.AvailableQuantity(r.StartTime, i.StartTime); err != nil {
+		fail(t, err)
+	} else if q != 1 {
+		t.Fatalf("Expected 1, was %v", q)
+	}
+
+	if q, err := r.AvailableQuantity(i.StartTime, i.EndTime); err != nil {
+		fail(t, err)
+	} else if q != 0 {
+		t.Fatalf("Expected 0, was %v", q)
+	}
+
+	if q, err := r.AvailableQuantity(i.EndTime, r.EndTime); err != nil {
+		fail(t, err)
+	} else if q != 1 {
+		t.Fatalf("Expected 1, was %v", q)
+	}
 }
 
 func TestOverbook(t *testing.T) {

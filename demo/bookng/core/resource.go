@@ -3,6 +3,7 @@ package core
 import (
 	"gappkit/db"
 	"github.com/pkg/errors"
+	"math"
 	"time"
 )
 
@@ -17,6 +18,25 @@ type Resource struct {
 func (self *Resource) Init(db *DB, id db.RecordId) *Resource {
 	self.BasicModel.Init(db, id)
 	return self
+}
+
+func (self *Resource) AvailableQuantity(startTime, endTime time.Time) (int64, error) {
+	in := self.db.QuantityIndex.FindLower(self.Id(), startTime)
+	out := int64(math.MaxInt64)
+	
+	for in.Next() && in.Key(1).(time.Time).Before(endTime) {
+		q, err := self.db.LoadQuantity(in.Value())
+
+		if err != nil {
+			return out, err
+		}
+
+		if q.Available < out {
+			out = q.Available
+		}
+	}
+
+	return out, nil
 }
 
 func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, available int64) error {
@@ -37,19 +57,19 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 			out = append(out, head)
 			q.StartTime = startTime
 		}
-		
-		q.Available += available
-		q.Total += total
 
-		if q.Available < 0 {
-			return NewOverbook(self, q.StartTime, q.EndTime)
-		}
-				
 		if q.EndTime.After(endTime) {
 			tail := self.db.NewQuantity(self, endTime, q.EndTime, q.Total, q.Available)
 			out = append(out, tail)
 			q.EndTime = endTime
 		}
+
+		q.Available += available
+		q.Total += total
+
+		if q.Available < 0 {
+			return NewOverbook(self, q.StartTime, q.EndTime)
+		}				
 	}
 
 	for _, q := range out {
