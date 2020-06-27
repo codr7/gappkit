@@ -1,4 +1,5 @@
-* loop Resource.Categories in UpdateQuantity
+* add dom-package
+* loop Resource.Categories in Update/AvailableQuantity()
 ** loop categories recursively (skip recursive self call)
 ** add category test
 * add Product with optional ResourceId
@@ -6,7 +7,3 @@
 *** ChargeTime, Product, Amount & optional Item
 ** update quantity on resource if set
 *** from ChargeTime to MaxTime
-* add db transactions
-* add templates
-** pull fragments and run through text template
-** <go items>...{{.Foo}}...</go>
