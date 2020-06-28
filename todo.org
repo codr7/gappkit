@@ -1,5 +1,9 @@
 * add Table/Index timestamps like clogbase
 * hook up Bookng calendar using dom
+* transactions
+** clogbase
+** load live data from local transaction
+** rollback committed changes on failure
 * loop Resource.Categories in Update/AvailableQuantity()
 ** loop categories recursively (skip recursive self call)
 ** add category test

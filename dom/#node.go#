@@ -25,7 +25,6 @@ func finalizeNode(node *Node) {
 
 func NewNode(id string) *Node {
 	n := nodePool.Get()
-	
 
 	if n == nil {
 		n = new(Node)
