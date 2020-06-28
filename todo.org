@@ -1,4 +1,5 @@
-* add dom-package
+* add Table/Index timestamps like clogbase
+* hook up Bookng calendar using dom
 * loop Resource.Categories in Update/AvailableQuantity()
 ** loop categories recursively (skip recursive self call)
 ** add category test

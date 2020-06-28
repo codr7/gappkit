@@ -2,7 +2,9 @@ package main
 
 import (
 	"gappkit/demo/bookng/core"
+	"gappkit/dom"
 	"log"
+	"os"
 )
 
 func main() {
@@ -12,6 +14,13 @@ func main() {
 	if err := db.Open(); err != nil {
 		log.Fatalf("%+v", err)
 	}
+
+	d := dom.NewNode("html")
+	h := d.NewNode("head")
+	h.NewNode("title").Append("Title")
+	b := d.NewNode("body")
+	b.NewNode("a").Set("href", "https://foo.bar").Append("Foobar")
+	d.Write(os.Stdout)
 	
 	defer db.Close()
 }
