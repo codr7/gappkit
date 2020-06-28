@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"io"
 	"strconv"
+	"time"
 )
 
 func EncodeInt(val int64, out io.Writer) error {
@@ -73,4 +74,23 @@ func DecodeString(in *bufio.Reader) (string, error) {
 	return string(v), nil
 }
 
+func EncodeTime(val time.Time, out io.Writer) error {
+	if err := EncodeInt(val.Unix(), out); err != nil {
+		return err
+	}
 
+	return nil
+}
+
+var nilTime time.Time
+
+func DecodeTime(in *bufio.Reader) (time.Time, error) {
+	var s int64
+	var err error
+	
+	if s, err = DecodeInt(in); err != nil {
+		return nilTime, err
+	}
+
+	return time.Unix(s, 0), nil
+}

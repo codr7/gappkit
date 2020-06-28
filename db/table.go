@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"time"
 )
 
 type RecordId = int64
@@ -49,7 +50,7 @@ func (self *Table) Name() string {
 	return self.name
 }
 
-func (self *Table) Open() error {
+func (self *Table) Open(maxTime time.Time) error {
 	var err error
 	keyPath := path.Join(self.root.path, fmt.Sprintf("%v.key", self.name))
 	
@@ -60,6 +61,21 @@ func (self *Table) Open() error {
 	keyReader := bufio.NewReader(self.keyFile)
 	
 	for {
+		var t time.Time
+		
+		if t, err = DecodeTime(keyReader); err != nil {
+			if err == io.EOF {
+				break
+			}
+			
+			return errors.Wrap(err, "Failed decoding timestamp")
+		}
+
+		if !t.Before(maxTime) {
+			self.keyFile.Seek(0, 2)
+			break;
+		}
+		
 		var id RecordId
 		var err error
 		
@@ -91,7 +107,7 @@ func (self *Table) Open() error {
 	}
 
 	for _, index := range self.indexes {
-		if err = index.Open(); err != nil {
+		if err = index.Open(maxTime); err != nil {
 			return errors.Wrapf(err, "Failed opening index: %v", index.name)
 		}
 	}
@@ -123,6 +139,10 @@ func (self *Table) NextId() RecordId {
 }
 
 func (self *Table) storeKey(id RecordId, offset Offset) error {
+	if err := EncodeTime(time.Now(), self.keyFile); err != nil {
+		return errors.Wrap(err, "Failed encoding timestamp")
+	}
+
 	if err := EncodeInt(id, self.keyFile); err != nil {
 		return errors.Wrap(err, "Failed encoding id")
 	}

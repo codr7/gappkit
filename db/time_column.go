@@ -21,22 +21,9 @@ func (self *TimeColumn) Compare(x, y interface{}) compare.Order {
 }
 
 func (self *TimeColumn) Decode(in *bufio.Reader) (interface{}, error) {
-	var s int64
-	var err error
-	
-	if s, err = DecodeInt(in); err != nil {
-		return nil, err
-	}
-
-	return time.Unix(s, 0).UTC(), nil
+	return DecodeTime(in)
 }
 
 func (self *TimeColumn) Encode(val interface{}, out io.Writer) error {
-	v := val.(time.Time)
-	
-	if err := EncodeInt(v.Unix(), out); err != nil {
-		return err
-	}
-
-	return nil
+	return EncodeTime(val.(time.Time), out)
 }

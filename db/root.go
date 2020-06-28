@@ -3,6 +3,7 @@ package db
 import (
 	"github.com/pkg/errors"
 	"os"
+	"time"
 )
 
 type Root struct {
@@ -31,7 +32,7 @@ func (self *Root) Drop() error {
 	return nil
 }
 
-func (self *Root) Open() error {
+func (self *Root) Open(maxTime time.Time) error {
 	if _, err := os.Stat(self.path); os.IsNotExist(err) {
 		if err = os.Mkdir(self.path, os.ModePerm); err != nil {
 			return err
@@ -39,7 +40,7 @@ func (self *Root) Open() error {
 	}
 
 	for _, t := range self.tables {
-		if err := t.Open(); err != nil {
+		if err := t.Open(maxTime); err != nil {
 			return err
 		}
 	}

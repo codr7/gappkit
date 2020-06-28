@@ -18,17 +18,18 @@ type Node struct {
 }
 
 func finalizeNode(node *Node) {
-	node.attributes = nil
-	node.content = nil
 	nodePool.Put(node)
 }
 
 func NewNode(id string) *Node {
 	n := nodePool.Get()
-	
 
 	if n == nil {
 		n = new(Node)
+	} else {
+		n := n.(*Node)
+		n.attributes = nil
+		n.content = nil
 	}
 
 	runtime.SetFinalizer(n, finalizeNode)

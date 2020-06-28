@@ -5,13 +5,14 @@ import (
 	"gappkit/dom"
 	"log"
 	"os"
+	"time"
 )
 
 func main() {
 	log.Printf("Welcome to Bookng v%v", core.Version)
 	db := core.NewDB("db")
 
-	if err := db.Open(); err != nil {
+	if err := db.Open(time.Now()); err != nil {
 		log.Fatalf("%+v", err)
 	}
 

@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path"
+	"time"
 )
 
 type Index struct {
@@ -69,7 +70,7 @@ func (self *Index) loadValue(in *bufio.Reader) (RecordId, error) {
 	return v, nil
 }
 
-func (self *Index) Open() error {
+func (self *Index) Open(maxTime time.Time) error {
 	var err error
 	path := path.Join(self.root.path, fmt.Sprintf("%v.idx", self.name))
 	
@@ -80,8 +81,22 @@ func (self *Index) Open() error {
 	reader := bufio.NewReader(self.file)
 	
 	for {
-		var key IndexKey
+		var t time.Time
 
+		if t, err = DecodeTime(reader); err != nil {
+			if err == io.EOF {
+				break
+			}
+			
+			return errors.Wrap(err, "Failed decoding timestamp")
+		}
+
+		if !t.Before(maxTime) {
+			self.file.Seek(0, 2)
+			break;
+		}
+		
+		var key IndexKey		
 		key, err := self.loadKey(reader)
 
 		if err != nil {
@@ -159,6 +174,10 @@ func (self *Index) Add(record Record) (bool, error) {
 	
 	if !self.add(key, record.id) {
 		return false, nil
+	}
+
+	if err := EncodeTime(time.Now(), self.file); err != nil {
+		return false, errors.Wrap(err, "Failed encoding timestamp")
 	}
 	
 	if err := self.storeKey(key); err != nil {

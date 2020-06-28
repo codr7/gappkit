@@ -4,6 +4,7 @@ import (
 	"gappkit/demo/bookng/core"
 	"github.com/pkg/errors"
 	"testing"
+	"time"
 )
 
 var db *core.DB
@@ -19,7 +20,7 @@ func setup(t *testing.T) {
 		fail(t, err)
 	}
 
-	if err := db.Open(); err != nil {
+	if err := db.Open(time.Now()); err != nil {
 		fail(t, err)
 	}
 }

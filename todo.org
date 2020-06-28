@@ -1,4 +1,3 @@
-* add Table/Index timestamps like clogbase
 * hook up Bookng calendar using dom
 * transactions
 ** clogbase
