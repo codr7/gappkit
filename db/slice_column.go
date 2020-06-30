@@ -4,30 +4,32 @@ import (
 	"bufio"
 	"gappkit/compare"
 	"io"
+	"reflect"
 )
 
 type Slice = []interface{}
 
 type SliceColumnType struct {
 	itemType ColumnType
+	valueType reflect.Type
 }
 
 func SliceType(itemType ColumnType) *SliceColumnType {
-	return &SliceColumnType{itemType: itemType}
+	return &SliceColumnType{itemType: itemType, valueType: reflect.SliceOf(itemType.ValueType())}
 }
 
 func (self *SliceColumnType) Compare(x, y interface{}) compare.Order {
-	xs, ys := x.(Slice), y.(Slice)
-	max := len(ys)-1
+	xs, ys := reflect.ValueOf(x), reflect.ValueOf(y)
+	max := ys.Len()-1
 	var i int
-	var v interface{}
 	
-	for i, v = range xs {
+	for i := 0; i < xs.Len(); i++ {
 		if i > max {
 			return compare.Gt
 		}
 
-		if result := self.itemType.Compare(v, ys[i]); result != compare.Eq {
+		if result := self.itemType.Compare(xs.Index(i).Interface(), ys.Index(i).Interface());
+		result != compare.Eq {
 			return result
 		}
 	}
@@ -40,37 +42,46 @@ func (self *SliceColumnType) Compare(x, y interface{}) compare.Order {
 }
 
 func (self *SliceColumnType) Decode(in *bufio.Reader) (interface{}, error) {
-	l, err := DecodeLen(in)
+	n, err := DecodeLen(in)
 
 	if err != nil {
 		return nil, err
 	}
 
-	s :=  make(Slice, l)
+	s := reflect.MakeSlice(self.ValueType(), n, n)
 	
-	for i := 0; i < l; i++ {
-		if s[i], err = self.itemType.Decode(in); err != nil {
-			return nil, err
+	for i := 0; i < n; i++ {		
+		if dv, err := self.itemType.Decode(in); err == nil {
+			v := s.Index(i)
+			v.Set(reflect.ValueOf(dv))
+			continue
 		}
+
+		return nil, err
 	}
 
-	return s, nil
+	return s.Interface(), nil
 }
-	
+
 func (self *SliceColumnType) Encode(val interface{}, out io.Writer) error {
-	s := val.(Slice)
+	s := reflect.ValueOf(val)
+	n := s.Len()
 	
-	if err := EncodeInt(int64(len(s)), out); err != nil {
+	if err := EncodeInt(int64(n), out); err != nil {
 		return err
 	}
 
-	for _, v := range s {
-		if err := self.itemType.Encode(v, out); err != nil {
+	for i := 0; i < n; i++ {
+		if err := self.itemType.Encode(s.Index(i).Interface(), out); err != nil {
 			return err
 		}
 	}
 
 	return nil
+}
+
+func (self *SliceColumnType) ValueType() reflect.Type {
+	return self.valueType
 }
 
 type SliceColumn struct {

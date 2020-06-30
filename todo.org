@@ -1,12 +1,11 @@
 * loop Resource.Categories in Update/AvailableQuantity()
 ** loop categories recursively
 ** add test
-
-* hook up Bookng calendar using dom
 * transactions
 ** clogbase
 ** load live data from local transaction
 ** rollback committed changes on failure
+* hook up Bookng calendar using dom
 * add Product with optional ResourceId
 ** add Charge
 *** ChargeTime, Product, Amount & optional Item

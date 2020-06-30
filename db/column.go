@@ -4,12 +4,14 @@ import (
 	"bufio"
 	"gappkit/compare"
 	"io"
+	"reflect"
 )
 
 type ColumnType interface {
 	Compare(x, y interface{}) compare.Order
 	Decode(in *bufio.Reader) (interface{}, error)
 	Encode(val interface{}, out io.Writer) error
+	ValueType() reflect.Type
 }
 
 type Column interface {
@@ -47,4 +49,8 @@ func (self *BasicColumn) Decode(in *bufio.Reader) (interface{}, error) {
 
 func (self *BasicColumn) Encode(val interface{}, out io.Writer) error {
 	return self.columnType.Encode(val, out)
+}
+
+func (self *BasicColumn) ValueType() reflect.Type {
+	return self.columnType.ValueType()
 }

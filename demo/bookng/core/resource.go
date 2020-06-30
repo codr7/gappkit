@@ -9,7 +9,7 @@ import (
 
 type Resource struct {
 	BasicModel
-	Categories db.Slice
+	Categories []db.RecordId
 	Name string
 	StartTime, EndTime time.Time
 	Quantity int64

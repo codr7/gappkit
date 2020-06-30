@@ -4,9 +4,13 @@ import (
 	"bufio"
 	"gappkit/compare"
 	"io"
+	"reflect"
 )
 
-var StringType StringColumnType
+var (
+	StringType StringColumnType
+	stringValueType = reflect.TypeOf("")
+)
 
 type StringColumnType struct {
 }
@@ -21,6 +25,10 @@ func (self *StringColumnType) Decode(in *bufio.Reader) (interface{}, error) {
 
 func (self *StringColumnType) Encode(val interface{}, out io.Writer) error {
 	return EncodeString(val.(string), out)
+}
+
+func (self *StringColumnType) ValueType() reflect.Type {
+	return stringValueType
 }
 
 type StringColumn struct {

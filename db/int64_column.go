@@ -4,9 +4,13 @@ import (
 	"bufio"
 	"gappkit/compare"
 	"io"
+	"reflect"
 )
 
-var Int64Type Int64ColumnType
+var (
+	Int64Type Int64ColumnType
+	int64ValueType = reflect.TypeOf(int64(0))
+)
 
 type Int64ColumnType struct {
 }
@@ -23,6 +27,9 @@ func (self *Int64ColumnType) Encode(val interface{}, out io.Writer) error {
 	return EncodeInt(val.(int64), out)
 }
 
+func (self *Int64ColumnType) ValueType() reflect.Type {
+	return int64ValueType
+}
 
 type Int64Column struct {
 	BasicColumn

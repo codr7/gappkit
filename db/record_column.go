@@ -4,9 +4,13 @@ import (
 	"bufio"
 	"gappkit/compare"
 	"io"
+	"reflect"
 )
 
-var RecordType RecordColumnType
+var (
+	RecordType RecordColumnType
+	recordValueType = reflect.TypeOf(RecordId(0))
+)
 
 type RecordColumnType struct {
 }
@@ -21,6 +25,10 @@ func (self *RecordColumnType) Decode(in *bufio.Reader) (interface{}, error) {
 
 func (self *RecordColumnType) Encode(val interface{}, out io.Writer) error {
 	return EncodeRecordId(val.(RecordId), out)
+}
+
+func (self *RecordColumnType) ValueType() reflect.Type {
+	return recordValueType
 }
 
 type RecordColumn struct {

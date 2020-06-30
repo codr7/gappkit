@@ -4,16 +4,16 @@ import (
 	"bufio"
 	"gappkit/compare"
 	"io"
+	"reflect"
 	"time"
 )
 
-var TimeType TimeColumnType
+var (
+	TimeType TimeColumnType
+	timeValueType = reflect.TypeOf(time.Now())
+)
 
 type TimeColumnType struct {
-}
-
-type TimeColumn struct {
-	BasicColumn
 }
 
 func (self *TimeColumnType) Compare(x, y interface{}) compare.Order {
@@ -26,6 +26,14 @@ func (self *TimeColumnType) Decode(in *bufio.Reader) (interface{}, error) {
 
 func (self *TimeColumnType) Encode(val interface{}, out io.Writer) error {
 	return EncodeTime(val.(time.Time), out)
+}
+
+func (self *TimeColumnType) ValueType() reflect.Type {
+	return timeValueType
+}
+
+type TimeColumn struct {
+	BasicColumn
 }
 
 func (self *TimeColumn) Init(name string) *TimeColumn {
