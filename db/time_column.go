@@ -7,23 +7,28 @@ import (
 	"time"
 )
 
+var TimeType TimeColumnType
+
+type TimeColumnType struct {
+}
+
 type TimeColumn struct {
 	BasicColumn
 }
 
-func (self *TimeColumn) Init(name string) *TimeColumn {
-	self.BasicColumn.Init(name)
-	return self
-}
-
-func (self *TimeColumn) Compare(x, y interface{}) compare.Order {
+func (self *TimeColumnType) Compare(x, y interface{}) compare.Order {
 	return compare.Time(x.(time.Time), y.(time.Time))
 }
 
-func (self *TimeColumn) Decode(in *bufio.Reader) (interface{}, error) {
+func (self *TimeColumnType) Decode(in *bufio.Reader) (interface{}, error) {
 	return DecodeTime(in)
 }
 
-func (self *TimeColumn) Encode(val interface{}, out io.Writer) error {
+func (self *TimeColumnType) Encode(val interface{}, out io.Writer) error {
 	return EncodeTime(val.(time.Time), out)
+}
+
+func (self *TimeColumn) Init(name string) *TimeColumn {
+	self.BasicColumn.Init(name, &TimeType)
+	return self
 }

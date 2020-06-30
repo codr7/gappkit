@@ -9,7 +9,7 @@ import (
 
 type Resource struct {
 	BasicModel
-	Categories db.RecordSet
+	Categories db.Slice
 	Name string
 	StartTime, EndTime time.Time
 	Quantity int64
@@ -130,7 +130,6 @@ func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
 
 func (self *DB) NewResource() *Resource {
 	r := new(Resource).Init(self, self.Resource.NextId())
-	r.Categories.Add(r.Id())
 	r.StartTime = MinTime
 	r.EndTime = MaxTime
 	r.Quantity = 1
