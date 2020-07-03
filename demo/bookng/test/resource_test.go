@@ -1,20 +1,20 @@
 package tests
 
 import (
-	"gappkit/demo/bookng/core"
+	"gappkit/demo/bookng/pkg"
 	"github.com/pkg/errors"
 	"testing"
 	"time"
 )
 
-var db *core.DB
+var db *bookng.DB
 
 func fail(t *testing.T, err error) {
 	t.Fatalf("%+v", err)
 }
 
 func setup(t *testing.T) {
-	db = core.NewDB("testdb")
+	db = bookng.NewDB("testdb")
 
 	if err := db.Drop(); err != nil {
 		fail(t, err)
@@ -136,7 +136,7 @@ func TestOverbook(t *testing.T) {
 	i = db.NewItem()
 	i.Resource = r.Id()
 
-	var ob *core.Overbook
+	var ob *bookng.Overbook
 	if !errors.As(i.Store(), &ob) {
 		t.Fatal()
 	}
