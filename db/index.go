@@ -131,11 +131,11 @@ func (self *Index) Close() error {
 	return nil
 }
 
-func (self *Index) Key(record Record) IndexKey {
-	var k IndexKey
+func (self *Index) Key(rec Record) IndexKey {
+	k := make(IndexKey, len(self.keyColumns))
 	
-	for _, c := range self.keyColumns {
-		k = append(k, record.Get(c))
+	for i, c := range self.keyColumns {
+		k[i] = rec.Get(c)
 	}
 
 	return k
@@ -169,47 +169,6 @@ func (self *Index) storeValue(val RecordId) error {
 	return nil
 }
 
-func (self *Index) Add(record Record) (bool, error) {
-	key := self.Key(record)
-	
-	if !self.add(key, record.id) {
-		return false, nil
-	}
-
-	if err := EncodeTime(time.Now(), self.file); err != nil {
-		return false, errors.Wrap(err, "Failed encoding timestamp")
-	}
-	
-	if err := self.storeKey(key); err != nil {
-		return false, err
-	}
-	
-	if err := self.storeValue(record.id); err != nil {
-		return false, err
-	}
-	
-	return true, nil
-}
-
-func (self Index) find(key IndexKey) (int, bool) {
-	min, max := 0, self.Len()
-
-	for min < max {
-		i := (min+max) / 2
-
-		switch self.Compare(key, self.items[i].key) {		
-			case compare.Lt:
-				max = i
-			case compare.Gt:
-				min = i+1
-			default:
-				return i, true
-		}
-	}
-
-	return max, false
-}
-
 func (self *Index) add(key IndexKey, value RecordId) bool {
 	i, ok := self.find(key)
 
@@ -233,6 +192,47 @@ func (self *Index) add(key IndexKey, value RecordId) bool {
 	return true
 }
 
+func (self *Index) Add(rec Record) (bool, error) {
+	key := self.Key(rec)
+	
+	if !self.add(key, rec.id) {
+		return false, nil
+	}
+
+	if err := EncodeTime(time.Now(), self.file); err != nil {
+		return false, errors.Wrap(err, "Failed encoding timestamp")
+	}
+	
+	if err := self.storeKey(key); err != nil {
+		return false, err
+	}
+	
+	if err := self.storeValue(rec.id); err != nil {
+		return false, err
+	}
+	
+	return true, nil
+}
+
+func (self Index) find(key IndexKey) (int, bool) {
+	min, max := 0, self.Len()
+
+	for min < max {
+		i := (min+max) / 2
+		
+		switch self.Compare(key, self.items[i].key) {		
+			case compare.Lt:
+				max = i
+			case compare.Gt:
+				min = i+1
+			default:
+				return i, true
+		}
+	}
+
+	return max, false
+}
+
 func (self *Index) Find(key IndexKey) RecordId {
 	i, ok := self.find(key)
 
@@ -244,20 +244,20 @@ func (self *Index) Find(key IndexKey) RecordId {
 }
 
 func (self *Index) FindLower(key...interface{}) *IndexIter {
-	i, _ := self.find(key)
-
-	for i > 0 {
-		i--
-		
-		if self.Compare(key, self.items[i].key) == compare.Gt {
-			break;
-		}
-	}
-
-	if i == 0 {
-		i--
+	if len(self.items) == 0 {
+		return self.NewIter(0)
 	}
 	
+	i, _ := self.find(key)
+
+	if i > 0 && i == len(self.items) {
+		i--
+	}
+
+	for i > 0 && self.Compare(key, self.items[i].key) == compare.Lt {
+		i--
+	}
+
 	return self.NewIter(i)
 }
 
@@ -321,14 +321,26 @@ func (self *IndexIter) Key(j int) interface{} {
 	return self.index.items[self.i].key[j]
 }
 
-func (self *IndexIter) Next() bool {
-	self.i++
+func (self *IndexIter) Prev() bool {
+	if self.i > 0 {
+		self.i--
+		return true
+	}
 
-	if self.i >= self.index.Len() {
+	return false
+}
+
+func (self *IndexIter) Next() bool {
+	if self.i+1 >= self.index.Len() {
 		return false
 	}
 
+	self.i++
 	return true
+}
+
+func (self *IndexIter) Valid() bool {
+	return self.i < len(self.index.items)
 }
 
 func (self *IndexIter) Value() RecordId {

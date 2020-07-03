@@ -154,8 +154,8 @@ func (self *Table) storeKey(id RecordId, offset Offset) error {
 	return nil
 }
 
-func (self *Table) storeData(record Record) (Offset, error) {	
-	if prev, err := self.Load(record.id); err != nil {
+func (self *Table) storeData(rec Record) (Offset, error) {	
+	if prev, err := self.Load(rec.id); err != nil {
 		return -1, errors.Wrap(err, "Failed loading record")
 	} else if prev != nil {
 		for _, ix := range self.indexes {
@@ -171,13 +171,13 @@ func (self *Table) storeData(record Record) (Offset, error) {
 		return -1, errors.Wrap(err, "Failed seeking data file")
 	}
 
-	self.records[record.id] = offset
+	self.records[rec.id] = offset
 	
-	if err := EncodeInt(int64(record.Len()), self.dataFile); err != nil {
+	if err := EncodeInt(int64(rec.Len()), self.dataFile); err != nil {
 		return -1, errors.Wrap(err, "Failed encoding record length")
 	}
 	
-	for _, f := range record.Fields {
+	for _, f := range rec.Fields {
 		if err := EncodeString(f.Column.Name(), self.dataFile); err != nil {
 			return -1, errors.Wrap(err, "Failed encoding field name")
 		}
@@ -188,25 +188,25 @@ func (self *Table) storeData(record Record) (Offset, error) {
 	}
 
 	for _, ix := range self.indexes {
-		if ok, err := ix.Add(record); err != nil {
+		if ok, err := ix.Add(rec); err != nil {
 			return -1, errors.Wrapf(err, "Failed adding to index: %v", ix.name)
 		} else if !ok {
-			return -1, errors.New(fmt.Sprintf("Duplicate key in index: %v", ix.name))
+			return -1, errors.New(fmt.Sprintf("Duplicate key in index: %v\n%v", ix.name, rec))
 		}
 	}
 	
 	return offset, nil
 }
 
-func (self *Table) Store(record Record) error {
-	offset, err := self.storeData(record)
+func (self *Table) Store(rec Record) error {
+	offset, err := self.storeData(rec)
 
 	if err != nil {
 		return errors.Wrap(err, "Failed storing data")
 	}
 
 
-	if err = self.storeKey(record.id, offset); err != nil {
+	if err = self.storeKey(rec.id, offset); err != nil {
 		return errors.Wrap(err, "Falied storing key")
 	}
 

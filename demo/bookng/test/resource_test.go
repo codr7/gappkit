@@ -31,7 +31,7 @@ func teardown(t *testing.T) {
 	}
 }
 
-func TestInitQuantity(t *testing.T) {
+func TestResource(t *testing.T) {
 	setup(t)
 	defer teardown(t)
 	
@@ -65,6 +65,53 @@ func TestInitQuantity(t *testing.T) {
 		fail(t, err)
 	} else if q != 1 {
 		t.Fatalf("Expected 1, was %v", q)
+	}
+}
+
+func TestCategory(t *testing.T) {
+	setup(t)
+	defer teardown(t)
+
+	foo := db.NewResource()
+	foo.Name = "foo"
+	foo.Quantity = 0
+	
+	if err := foo.Store(); err != nil {
+		fail(t, err)
+	}
+
+	bar := db.NewResource()
+	bar.Name = "bar"
+	bar.AddCategory(foo.Id())
+	bar.AddCategory(foo.Id())
+	
+	if err := bar.Store(); err != nil {
+		fail(t, err)
+	}
+	
+	i := db.NewItem()
+	i.Resource = bar.Id()
+
+	if err := i.Store(); err != nil {
+		fail(t, err)
+	}
+
+	if q, err := foo.AvailableQuantity(foo.StartTime, i.StartTime); err != nil {
+		fail(t, err)
+	} else if q != 2 {
+		t.Fatalf("Expected 2, was %v", q)
+	}
+
+	if q, err := foo.AvailableQuantity(i.StartTime, i.EndTime); err != nil {
+		fail(t, err)
+	} else if q != 0 {
+		t.Fatalf("Expected 0, was %v", q)
+	}
+
+	if q, err := foo.AvailableQuantity(i.EndTime, foo.EndTime); err != nil {
+		fail(t, err)
+	} else if q != 2 {
+		t.Fatalf("Expected 2, was %v", q)
 	}
 }
 

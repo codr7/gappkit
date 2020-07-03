@@ -22,9 +22,14 @@ func (self *Resource) Init(db *DB, id db.RecordId) *Resource {
 
 func (self *Resource) AvailableQuantity(startTime, endTime time.Time) (int64, error) {
 	in := self.db.QuantityIndex.FindLower(self.Id(), startTime)
+
+	if in.Valid() && !in.Key(2).(time.Time).After(startTime) {
+		in.Next()
+	}
+
 	out := int64(math.MaxInt64)
 	
-	for in.Next() && in.Key(1).(time.Time).Before(endTime) {
+	for in.Key(0) == self.Id() && in.Key(1).(time.Time).Before(endTime) {
 		q, err := self.db.LoadQuantity(in.Value())
 
 		if err != nil {
@@ -34,16 +39,25 @@ func (self *Resource) AvailableQuantity(startTime, endTime time.Time) (int64, er
 		if q.Available < out {
 			out = q.Available
 		}
+
+		if !in.Next() {
+			break
+		}
 	}
 
 	return out, nil
 }
 
-func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, available int64) error {
+func (self *Resource) updateQuantity(startTime, endTime time.Time, total, available int64) error {
 	in := self.db.QuantityIndex.FindLower(self.Id(), startTime)
+
+	if in.Valid() && !in.Key(2).(time.Time).After(startTime) {
+		in.Next()
+	}
+
 	var out []*Quantity
 	
-	for in.Next() && in.Key(1).(time.Time).Before(endTime) {
+	for in.Key(0) == self.Id() && in.Key(1).(time.Time).Before(endTime) {
 		q, err := self.db.LoadQuantity(in.Value())
 
 		if err != nil {
@@ -54,14 +68,14 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 
 		if q.StartTime.Before(startTime) {
 			head := self.db.NewQuantity(self, q.StartTime, startTime, q.Total, q.Available)
-			out = append(out, head)
 			q.StartTime = startTime
+			out = append(out, head)
 		}
 
 		if q.EndTime.After(endTime) {
 			tail := self.db.NewQuantity(self, endTime, q.EndTime, q.Total, q.Available)
-			out = append(out, tail)
 			q.EndTime = endTime
+			out = append(out, tail)
 		}
 
 		q.Available += available
@@ -69,12 +83,42 @@ func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, availa
 
 		if q.Available < 0 {
 			return NewOverbook(self, q.StartTime, q.EndTime)
-		}				
+		}
+
+		if !in.Next() {
+			break
+		}
 	}
 
 	for _, q := range out {
 		if err := q.Store(); err != nil {
 			return errors.Wrap(err, "Failed storing quantity")
+		}
+	}
+
+	return nil
+}
+
+func (self *Resource) UpdateQuantity(startTime, endTime time.Time, total, available int64) error {
+	if total == 0 && available == 0 {
+		return nil
+	}
+
+	for _, id := range self.Categories {
+		if id == self.Id() {
+			if err := self.updateQuantity(startTime, endTime, total, available); err != nil {
+				return err
+			}
+		} else {
+			r, err := self.db.LoadResource(id)
+			
+			if err != nil {
+				return err
+			}
+			
+			if err := r.UpdateQuantity(startTime, endTime, total, available); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -118,6 +162,10 @@ func (self *Resource) Table() *db.Table {
 	return &self.db.Resource
 }
 
+func (self *Resource) AddCategory(id db.RecordId) {
+	self.Categories = append(self.Categories, id)
+}
+
 func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
 	out := new(Resource).Init(self, id)
 	
@@ -129,7 +177,9 @@ func (self *DB) LoadResource(id db.RecordId) (*Resource, error) {
 }
 
 func (self *DB) NewResource() *Resource {
-	r := new(Resource).Init(self, self.Resource.NextId())
+	id := self.Resource.NextId()
+	r := new(Resource).Init(self, id)
+	r.AddCategory(id)
 	r.StartTime = MinTime
 	r.EndTime = MaxTime
 	r.Quantity = 1

@@ -41,7 +41,8 @@ func NewDB(path string) *DB {
 	self.Quantity.AddColumn(self.QuantityTotal.Init("Total"))
 	self.Quantity.AddColumn(self.QuantityAvailable.Init("Available"))
 	
-	self.QuantityIndex.Init(&self.Root, "quantity", true, &self.QuantityResource, &self.QuantityStartTime)
+	self.QuantityIndex.Init(&self.Root, "quantity", true,
+		&self.QuantityResource, &self.QuantityStartTime, &self.QuantityEndTime)
 	self.Quantity.AddIndex(&self.QuantityIndex)
 	
 	self.AddTable(self.Resource.Init(&self.Root, "resource"))
