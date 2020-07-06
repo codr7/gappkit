@@ -45,6 +45,10 @@ func (self *Node) Append(val string) {
 	self.content = append(self.content, val)
 }
 
+func (self *Node) Appendf(spec string, args...interface{}) {
+	self.content = append(self.content, fmt.Sprintf(spec, args...))
+}
+
 func (self *Node) AppendNode(node *Node) {
 	self.content = append(self.content, node)
 }
@@ -77,12 +81,20 @@ func (self *Node) Write(out io.Writer) error {
 
 	if self.attributes != nil {
 		for k, v := range self.attributes {
-			fmt.Fprintf(out, " %v=\"%v\"", k, v)
+			if v != nil {
+				fmt.Fprintf(out, " %v=\"%v\"", k, v)
+			}
+		}
+
+		for k, v := range self.attributes {
+			if v == nil {
+				fmt.Fprintf(out, " %v", k)
+			}
 		}
 	}
 	
 	if len(self.content) == 0 {
-		io.WriteString(out, "/>")
+		io.WriteString(out, "/>\n")
 	} else {
 		io.WriteString(out, ">\n")
 		
