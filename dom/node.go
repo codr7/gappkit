@@ -1,6 +1,7 @@
 package dom
 
 import (
+	"bytes"
 	"fmt"
 	"io"
 	"runtime"
@@ -15,6 +16,7 @@ type Node struct {
 	id string
 	attributes map[string]interface{}
 	content []interface{}
+	script bytes.Buffer
 }
 
 func finalizeNode(node *Node) {
@@ -41,16 +43,14 @@ func (self *Node) Init(id string) *Node {
 	return self
 }
 
-func (self *Node) Append(val string) {
-	self.content = append(self.content, val)
-}
-
-func (self *Node) Appendf(spec string, args...interface{}) {
+func (self *Node) Append(spec string, args...interface{}) *Node {
 	self.content = append(self.content, fmt.Sprintf(spec, args...))
+	return self
 }
 
-func (self *Node) AppendNode(node *Node) {
+func (self *Node) AppendNode(node *Node) *Node {
 	self.content = append(self.content, node)
+	return self
 }
 
 func (self *Node) NewNode(id string) *Node {
@@ -114,4 +114,18 @@ func (self *Node) Write(out io.Writer) error {
 	}
 
 	return nil
+}
+
+func (self *Node) WriteJS(out io.Writer) {
+	io.Copy(out, &self.script)
+	self.script.Reset()
+
+	for _, v := range self.content {
+		switch v := v.(type) {
+		case *Node:
+			v.WriteJS(out)
+		default:
+			break
+		}
+	}
 }
