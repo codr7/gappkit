@@ -26,8 +26,12 @@ func (self *Doc) Init(title string) *Doc {
 	return self
 }
 
-func (self *Doc) LinkCSS(href string) *Node {
+func (self *Doc) CSS(href string) *Node {
 	return self.Head.NewNode("link").Set("rel", "stylesheet").Set("href", href)
+}
+
+func (self *Doc) Script(src string) *Node {
+	return self.Head.NewNode("script").Set("src", src).Append("")
 }
 
 func (self *Doc) Write(out io.Writer) error {

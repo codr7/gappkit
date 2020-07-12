@@ -10,10 +10,11 @@ import (
 
 var (
 	nodePool sync.Pool
+	nextNodeId uint64
 )
 
 type Node struct {
-	id string
+	tag string
 	attributes map[string]interface{}
 	content []interface{}
 	script bytes.Buffer
@@ -23,7 +24,7 @@ func finalizeNode(node *Node) {
 	nodePool.Put(node)
 }
 
-func NewNode(id string) *Node {
+func NewNode(tag string) *Node {
 	n := nodePool.Get()
 
 	if n == nil {
@@ -35,11 +36,11 @@ func NewNode(id string) *Node {
 	}
 
 	runtime.SetFinalizer(n, finalizeNode)
-	return n.(*Node).Init(id)
+	return n.(*Node).Init(tag)
 }
 
-func (self *Node) Init(id string) *Node {
-	self.id = id
+func (self *Node) Init(tag string) *Node {
+	self.tag = tag
 	return self
 }
 
@@ -53,8 +54,20 @@ func (self *Node) AppendNode(node *Node) *Node {
 	return self
 }
 
-func (self *Node) NewNode(id string) *Node {
-	n := NewNode(id)
+func (self *Node) Id() interface{} {
+	id := self.Get("id")
+
+	if id == nil {
+		id = nextNodeId
+		nextNodeId++
+		self.Set("id", id)
+	}
+
+	return id
+}
+
+func (self *Node) NewNode(tag string) *Node {
+	n := NewNode(tag)
 	self.AppendNode(n)
 	return n
 }
@@ -77,7 +90,7 @@ func (self *Node) Set(key string, val interface{}) *Node {
 }
 
 func (self *Node) Write(out io.Writer) error {
-	fmt.Fprintf(out, "<%v", self.id)
+	fmt.Fprintf(out, "<%v", self.tag)
 
 	if self.attributes != nil {
 		for k, v := range self.attributes {
@@ -110,7 +123,7 @@ func (self *Node) Write(out io.Writer) error {
 			}
 		}
 
-		fmt.Fprintf(out, "</%v>\n", self.id)
+		fmt.Fprintf(out, "</%v>\n", self.tag)
 	}
 
 	return nil
