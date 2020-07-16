@@ -2,9 +2,7 @@ package main
 
 import (
 	"gappkit/demo/bookng/pkg"
-	"gappkit/dom"
 	"log"
-	"os"
 	"time"
 )
 
