@@ -16,6 +16,18 @@ const (
 	Gt = Order(1)
 )
 
+func Bool(x, y bool) Order {
+	if !x && y {
+		return Lt
+	}
+
+	if x && !y {
+		return Gt
+	}
+	
+	return Eq
+}
+
 func Int64(x, y int64) Order {
 	if x < y {
 		return Lt

@@ -233,7 +233,7 @@ func (self Index) find(key IndexKey) (int, bool) {
 	return max, false
 }
 
-func (self *Index) Find(key IndexKey) RecordId {
+func (self *Index) Find(key...interface{}) RecordId {
 	i, ok := self.find(key)
 
 	if !ok {

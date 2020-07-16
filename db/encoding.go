@@ -7,6 +7,27 @@ import (
 	"time"
 )
 
+func EncodeBool(val bool, out io.Writer) error {
+	var b byte
+
+	if val {
+		b = 1
+	}
+
+	_, err := out.Write([]byte{b})
+	return err
+}
+
+func DecodeBool(in *bufio.Reader) (bool, error) {
+	v, err := in.ReadByte()
+
+	if v == 1 {
+		return true, nil
+	}
+
+	return false, err
+}
+
 func EncodeInt(val int64, out io.Writer) error {
 	v := []byte(strconv.FormatInt(val, 10))
 	_, err := out.Write(append([]byte{byte(len(v))}, v...))
