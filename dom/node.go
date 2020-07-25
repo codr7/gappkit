@@ -114,8 +114,10 @@ func (self *Node) Write(out io.Writer) error {
 		for _, v := range self.content {
 			switch v := v.(type) {
 			case string:
-				io.WriteString(out, v)
-				io.WriteString(out, "\n")
+				if v != "" {
+					io.WriteString(out, v)
+					io.WriteString(out, "\n")
+				}
 			case *Node:
 				v.Write(out)
 			default:

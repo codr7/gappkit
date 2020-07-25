@@ -243,6 +243,10 @@ func (self *Index) Find(key...interface{}) RecordId {
 	return self.items[i].value
 }
 
+func (self *Index) First(key...interface{}) *IndexIter {
+	return self.NewIter(0)
+}
+
 func (self *Index) FindLower(key...interface{}) *IndexIter {
 	if len(self.items) == 0 {
 		return self.NewIter(0)
@@ -321,22 +325,12 @@ func (self *IndexIter) Key(j int) interface{} {
 	return self.index.items[self.i].key[j]
 }
 
-func (self *IndexIter) Prev() bool {
-	if self.i > 0 {
-		self.i--
-		return true
-	}
-
-	return false
+func (self *IndexIter) Prev() {
+	self.i--
 }
 
-func (self *IndexIter) Next() bool {
-	if self.i+1 >= self.index.Len() {
-		return false
-	}
-
+func (self *IndexIter) Next() {
 	self.i++
-	return true
 }
 
 func (self *IndexIter) Valid() bool {
