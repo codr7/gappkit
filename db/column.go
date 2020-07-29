@@ -5,6 +5,7 @@ import (
 	"gappkit/compare"
 	"io"
 	"reflect"
+	"unsafe"
 )
 
 type ColumnType interface {
@@ -18,6 +19,7 @@ type Column interface {
 	ColumnType
 	Name() string
 	Type() ColumnType
+	Pointer() unsafe.Pointer
 }
 
 type BasicColumn struct {
@@ -53,4 +55,8 @@ func (self *BasicColumn) Encode(val interface{}, out io.Writer) error {
 
 func (self *BasicColumn) ValueType() reflect.Type {
 	return self.columnType.ValueType()
+}
+
+func (self *BasicColumn) Pointer() unsafe.Pointer {
+	return unsafe.Pointer(self)
 }

@@ -84,18 +84,28 @@ func Load(out Model) error {
 	return nil
 }
 
-func Store(in Model) error {
+func Store(in Model) (Record, error) {
+	out, err := ToRecord(in)
+
+	if err != nil {
+		return out, err
+	}
+	
+	if err := in.Table().Store(out); err != nil {
+		return out, err
+	}
+
+	return out, nil
+}
+
+func ToRecord(in Model) (Record, error) {
 	var out Record
 	out.Init(in.Id())
 	t := in.Table()
 	
 	if err := t.CopyFromModel(in, &out); err != nil {
-		return err
+		return out, err
 	}
 
-	if err := t.Store(out); err != nil {
-		return err
-	}
-
-	return nil
+	return out, nil
 }

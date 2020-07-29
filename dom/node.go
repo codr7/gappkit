@@ -54,6 +54,11 @@ func (self *Node) AppendNode(node *Node) *Node {
 	return self
 }
 
+func (self *Node) Script(spec string, args...interface{}) *Node {
+	fmt.Fprintf(&self.script, spec, args...)
+	return self
+}
+
 func (self *Node) Id() interface{} {
 	id := self.Get("id")
 

@@ -33,11 +33,13 @@ type IndexIter struct {
 	i int
 }
 
-func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Column) {
+func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Column) *Index {
 	self.root = root
 	self.name = name
 	self.unique = unique
 	self.keyColumns = keyColumns	
+	self.root.addIndex(self)
+	return self
 }
 
 func (self *Index) loadKey(in *bufio.Reader) (IndexKey, error) {
@@ -51,7 +53,7 @@ func (self *Index) loadKey(in *bufio.Reader) (IndexKey, error) {
 				return nil, err
 			}
 
-			return nil, errors.Wrap(err, "Failed decoding key")
+			return nil, errors.Wrapf(err, "Failed decoding key: %v", self.name)
 		}
 
 		k[i] = v
@@ -275,7 +277,11 @@ func (self *Index) Remove(record Record) (bool, error) {
 	if !self.remove(key, record.id) {
 		return false, nil
 	}
-	
+
+	if err := EncodeTime(time.Now(), self.file); err != nil {
+		return false, errors.Wrap(err, "Failed encoding timestamp")
+	}
+
 	if err := self.storeKey(key); err != nil {
 		return false, err
 	}

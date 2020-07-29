@@ -36,14 +36,19 @@ func (self *Node) H1(caption string) *Node {
 	return self
 }
 
+func (self *Node) H2(caption string) *Node {
+	self.NewNode("h2").Append(caption)
+	return self
+}
+
 func (self *Node) Input(id string, inputType string) *Node {
 	return self.NewNode("input").
 		Set("id", id).
 		Set("type", inputType)
 }
 
-func (self *Node) Label(id string, caption string) *Node {
-	return self.NewNode("label").Set("id", id).Append(caption)
+func (self *Node) Label(caption string) *Node {
+	return self.NewNode("label").Append(caption)
 }
 
 func (self *Node) OnClick(spec string, args...interface{}) *Node {

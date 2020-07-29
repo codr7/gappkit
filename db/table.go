@@ -31,6 +31,7 @@ func (self *Table) Init(root *Root, name string) *Table {
 	self.name = name
 	self.columns = make(map[string]Column)
 	self.records = make(map[RecordId]Offset)
+	self.root.addTable(self)
 	return self
 }
 
@@ -131,6 +132,10 @@ func (self *Table) Close() error {
 	}
 
 	return nil
+}
+
+func (self *Table) Len() int {
+	return len(self.records)
 }
 
 func (self *Table) NextId() RecordId {

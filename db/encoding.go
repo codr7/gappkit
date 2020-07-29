@@ -42,8 +42,8 @@ func DecodeInt(in *bufio.Reader) (int64, error) {
 	}
 
 	v := make([]byte, n)
-	
-	if _, err = in.Read(v); err != nil {
+
+	if _, err = io.ReadFull(in, v); err != nil {
 		return -1, err
 	}
 
@@ -88,7 +88,7 @@ func DecodeString(in *bufio.Reader) (string, error) {
 
 	v := make([]byte, l)
 
-	if _, err = in.Read(v); err != nil {
+	if _, err = io.ReadFull(in, v); err != nil {
 		return "", err
 	}
 	
