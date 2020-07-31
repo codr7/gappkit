@@ -107,12 +107,6 @@ func (self *Table) Open(maxTime time.Time) error {
 		return errors.Wrapf(err, "Failed opening file: %v", dataPath)
 	}
 
-	for _, index := range self.indexes {
-		if err = index.Open(maxTime); err != nil {
-			return errors.Wrapf(err, "Failed opening index: %v", index.name)
-		}
-	}
-	
 	return nil
 }
 
@@ -123,12 +117,6 @@ func (self *Table) Close() error {
 
 	if err := self.dataFile.Close(); err != nil {
 		return errors.Wrap(err, "Failed closing data file")
-	}
-
-	for _, index := range self.indexes {
-		if err := index.Close(); err != nil {
-			return errors.Wrapf(err, "Failed closing index: %v", index.name)
-		}
 	}
 
 	return nil

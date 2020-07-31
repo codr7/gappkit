@@ -14,6 +14,10 @@ func (self *Node) Table(id string) *Table {
 	return n
 }
 
+func (self *Table) Body() *Node {
+	return self.NewNode("tbody")
+}
+
 func (self *Table) Row() *TableRow {
 	n := new(TableRow)
 	self.AppendNode(n.Init("tr"))

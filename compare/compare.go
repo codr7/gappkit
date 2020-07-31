@@ -28,7 +28,7 @@ func Bool(x, y bool) Order {
 	return Eq
 }
 
-func Int64(x, y int64) Order {
+func Int(x, y int64) Order {
 	if x < y {
 		return Lt
 	}

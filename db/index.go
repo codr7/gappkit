@@ -256,11 +256,7 @@ func (self *Index) FindLower(key...interface{}) *IndexIter {
 	
 	i, _ := self.find(key)
 
-	if i > 0 && i == len(self.items) {
-		i--
-	}
-
-	for i > 0 && self.Compare(key, self.items[i].key) == compare.Lt {
+	for i > 0 && self.Compare(key, self.items[i-1].key) == compare.Eq {
 		i--
 	}
 

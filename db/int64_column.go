@@ -16,7 +16,7 @@ type Int64ColumnType struct {
 }
 
 func (self *Int64ColumnType) Compare(x, y interface{}) compare.Order {
-	return compare.Int64(x.(int64), y.(int64))
+	return compare.Int(x.(int64), y.(int64))
 }
 
 func (self *Int64ColumnType) Decode(in *bufio.Reader) (interface{}, error) {
