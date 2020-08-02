@@ -37,6 +37,7 @@ func TestResource(t *testing.T) {
 	
 	r := db.NewResource()
 	r.Name = "foo"
+	r.Quantity = 1
 	
 	if err := r.Store(); err != nil {
 		fail(t, err)
@@ -74,7 +75,6 @@ func TestCategory(t *testing.T) {
 
 	foo := db.NewResource()
 	foo.Name = "foo"
-	foo.Quantity = 0
 	
 	if err := foo.Store(); err != nil {
 		fail(t, err)
@@ -82,6 +82,7 @@ func TestCategory(t *testing.T) {
 
 	bar := db.NewResource()
 	bar.Name = "bar"
+	bar.Quantity = 1
 	bar.AddCategory(foo.Id())
 	bar.AddCategory(foo.Id())
 	
@@ -121,6 +122,7 @@ func TestOverbook(t *testing.T) {
 	
 	r := db.NewResource()
 	r.Name = "foo"
+	r.Quantity = 1
 	
 	if err := r.Store(); err != nil {
 		fail(t, err)

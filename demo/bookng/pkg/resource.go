@@ -168,6 +168,5 @@ func (self *DB) NewResource() *Resource {
 	r.AddCategory(id)
 	r.StartTime = MinTime
 	r.EndTime = MaxTime
-	r.Quantity = 1
 	return r
 }
