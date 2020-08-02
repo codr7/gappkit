@@ -329,12 +329,6 @@ func (self *IndexIter) Prev() {
 	self.i--
 }
 
-func (self *IndexIter) TryPrev() {
-	if self.i > 0 {
-		self.i--
-	}
-}
-
 func (self *IndexIter) Next() {
 	self.i++
 }

@@ -42,7 +42,7 @@ func NewDB(path string) *DB {
 	self.Quantity.AddColumn(self.QuantityAvailable.Init("Available"))
 	
 	self.QuantityIndex.Init(&self.Root, "quantity",
-		&self.QuantityResource, &self.QuantityStartTime, &self.QuantityEndTime)
+		&self.QuantityResource, &self.QuantityEndTime, &self.QuantityStartTime)
 	self.Quantity.AddIndex(&self.QuantityIndex)
 	
 	self.Resource.Init(&self.Root, "resource")
