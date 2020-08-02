@@ -22,14 +22,15 @@ func (self *Resource) Init(db *DB, id db.RecordId) *Resource {
 
 func (self *Resource) AvailableQuantity(startTime, endTime time.Time) (int64, error) {
 	in := self.db.QuantityIndex.FindLower(self.Id(), startTime)
-
-	if in.Valid() && !in.Key(2).(time.Time).After(startTime) {
+	in.TryPrev()
+	
+	if in.Valid() && (in.Key(0).(db.RecordId) != self.Id() || !in.Key(2).(time.Time).After(startTime)) {
 		in.Next()
 	}
 
 	out := int64(math.MaxInt64)
 	
-	for in.Key(0) == self.Id() && in.Key(1).(time.Time).Before(endTime) {
+	for in.Valid() && in.Key(0) == self.Id() && in.Key(1).(time.Time).Before(endTime) {
 		q, err := self.db.LoadQuantity(in.Value())
 
 		if err != nil {
@@ -40,9 +41,7 @@ func (self *Resource) AvailableQuantity(startTime, endTime time.Time) (int64, er
 			out = q.Available
 		}
 
-		if !in.Next() {
-			break
-		}
+		in.Next()
 	}
 
 	return out, nil
@@ -50,14 +49,15 @@ func (self *Resource) AvailableQuantity(startTime, endTime time.Time) (int64, er
 
 func (self *Resource) updateQuantity(startTime, endTime time.Time, total, available int64) error {
 	in := self.db.QuantityIndex.FindLower(self.Id(), startTime)
-
-	if in.Valid() && !in.Key(2).(time.Time).After(startTime) {
+	in.TryPrev()
+	
+	if in.Valid() && (in.Key(0).(db.RecordId) != self.Id() || !in.Key(2).(time.Time).After(startTime)) {
 		in.Next()
 	}
 
 	var out []*Quantity
 	
-	for in.Key(0) == self.Id() && in.Key(1).(time.Time).Before(endTime) {
+	for in.Valid() && in.Key(0) == self.Id() && in.Key(1).(time.Time).Before(endTime) {
 		q, err := self.db.LoadQuantity(in.Value())
 
 		if err != nil {
@@ -78,16 +78,14 @@ func (self *Resource) updateQuantity(startTime, endTime time.Time, total, availa
 			out = append(out, tail)
 		}
 
-		q.Available += available
 		q.Total += total
+		q.Available += available
 
 		if q.Available < 0 {
-			return NewOverbook(self, q.StartTime, q.EndTime)
+			return NewOverbook(self, q.StartTime, q.EndTime, q.Available)
 		}
 
-		if !in.Next() {
-			break
-		}
+		in.Next()
 	}
 
 	for _, q := range out {
@@ -139,7 +137,7 @@ func (self *Resource) Store() error {
 		}
 	}
 
-	if err = db.Store(self); err != nil {
+	if _, err = db.Store(self); err != nil {
 		return err
 	}
 	

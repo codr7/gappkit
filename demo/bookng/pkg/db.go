@@ -34,28 +34,28 @@ func NewDB(path string) *DB {
 	self := new(DB)
 	self.Root.Init(path)
 
-	self.AddTable(self.Quantity.Init(&self.Root, "quantity"))
+	self.Quantity.Init(&self.Root, "quantity")
 	self.Quantity.AddColumn(self.QuantityResource.Init("Resource"))
 	self.Quantity.AddColumn(self.QuantityStartTime.Init("StartTime"))
 	self.Quantity.AddColumn(self.QuantityEndTime.Init("EndTime"))
 	self.Quantity.AddColumn(self.QuantityTotal.Init("Total"))
 	self.Quantity.AddColumn(self.QuantityAvailable.Init("Available"))
 	
-	self.QuantityIndex.Init(&self.Root, "quantity", true,
+	self.QuantityIndex.Init(&self.Root, "quantity",
 		&self.QuantityResource, &self.QuantityStartTime, &self.QuantityEndTime)
 	self.Quantity.AddIndex(&self.QuantityIndex)
 	
-	self.AddTable(self.Resource.Init(&self.Root, "resource"))
+	self.Resource.Init(&self.Root, "resource")
 	self.Resource.AddColumn(self.ResourceName.Init("Name"))
 	self.Resource.AddColumn(self.ResourceCategories.Init("Categories", &db.RecordType))
 	self.Resource.AddColumn(self.ResourceStartTime.Init("StartTime"))
 	self.Resource.AddColumn(self.ResourceEndTime.Init("EndTime"))
 	self.Resource.AddColumn(self.ResourceQuantity.Init("Quantity"))
 
-	self.ResourceNameIndex.Init(&self.Root, "resource_name", true, &self.ResourceName)
+	self.ResourceNameIndex.Init(&self.Root, "resource_name", &self.ResourceName)
 	self.Resource.AddIndex(&self.ResourceNameIndex)
 
-	self.AddTable(self.Item.Init(&self.Root, "item"))
+	self.Item.Init(&self.Root, "item")
 	self.Item.AddColumn(self.ItemResource.Init("Resource"))
 	self.Item.AddColumn(self.ItemStartTime.Init("StartTime"))
 	self.Item.AddColumn(self.ItemEndTime.Init("EndTime"))

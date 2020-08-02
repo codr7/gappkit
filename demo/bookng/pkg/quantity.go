@@ -18,7 +18,8 @@ func (self *Quantity) Init(db *DB, id db.RecordId) *Quantity {
 }
 
 func (self *Quantity) Store() error {
-	return db.Store(self)
+	_, err := db.Store(self)
+	return err
 }
 
 func (self *Quantity) Table() *db.Table {

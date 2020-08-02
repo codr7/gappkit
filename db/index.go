@@ -18,7 +18,6 @@ type Index struct {
 	name string
 	items []IndexItem
 	root *Root
-	unique bool
 }
 
 type IndexItem struct {
@@ -33,10 +32,9 @@ type IndexIter struct {
 	i int
 }
 
-func (self *Index) Init(root *Root, name string, unique bool, keyColumns...Column) *Index {
+func (self *Index) Init(root *Root, name string, keyColumns...Column) *Index {
 	self.root = root
 	self.name = name
-	self.unique = unique
 	self.keyColumns = keyColumns	
 	self.root.addIndex(self)
 	return self
@@ -174,7 +172,7 @@ func (self *Index) storeValue(val RecordId) error {
 func (self *Index) add(key IndexKey, value RecordId) bool {
 	i, ok := self.find(key)
 
-	if ok && self.unique {
+	if ok {
 		return false
 	}
 
@@ -331,12 +329,18 @@ func (self *IndexIter) Prev() {
 	self.i--
 }
 
+func (self *IndexIter) TryPrev() {
+	if self.i > 0 {
+		self.i--
+	}
+}
+
 func (self *IndexIter) Next() {
 	self.i++
 }
 
 func (self *IndexIter) Valid() bool {
-	return self.i < len(self.index.items)
+	return self.i >= 0 && self.i < len(self.index.items)
 }
 
 func (self *IndexIter) Value() RecordId {

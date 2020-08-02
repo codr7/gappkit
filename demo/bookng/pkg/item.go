@@ -44,7 +44,7 @@ func (self *Item) Store() error {
 		}
 	}
 
-	if err = db.Store(self); err != nil {
+	if _, err = db.Store(self); err != nil {
 		return err
 	}
 

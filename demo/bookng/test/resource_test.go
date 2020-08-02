@@ -88,7 +88,7 @@ func TestCategory(t *testing.T) {
 	if err := bar.Store(); err != nil {
 		fail(t, err)
 	}
-	
+
 	i := db.NewItem()
 	i.Resource = bar.Id()
 
