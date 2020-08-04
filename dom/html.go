@@ -68,3 +68,7 @@ func (self *Node) OnClick(spec string, args...interface{}) *Node {
 
 	return self
 }
+
+func (self *Node) Readonly() *Node {
+	return self.Set("readonly", nil)
+}

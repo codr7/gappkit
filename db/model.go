@@ -73,7 +73,7 @@ func Load(out Model) error {
 	
 	in, err := t.Load(id)
 	
-	if err != nil {
+	if err != nil || in == nil {
 		return errors.Wrapf(err, "Failed loading model: %v/%v", t.Name(), id)
 	}
 
