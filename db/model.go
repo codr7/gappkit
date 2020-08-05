@@ -2,7 +2,9 @@ package db
 
 import (
 	"fmt"
+	"gappkit/compare"
 	"github.com/pkg/errors"
+	"log"
 	"reflect"
 )
 
@@ -24,47 +26,46 @@ func (self *BasicModel) Id() RecordId {
 	return self.id
 }
 
-func Get(source Model, fieldName string) (interface{}, error) {
+func Get(source Model, fieldName string) interface{} {
 	s := reflect.ValueOf(source)
 
 	if !s.IsValid() {
-		return nil, errors.New("Failed reflecting source")
+		log.Fatal("Failed reflecting source")
 	}
 
 	f := reflect.Indirect(s).FieldByName(fieldName)
 
 	if !f.IsValid() {
-		return nil, errors.New(fmt.Sprintf("Field not found: %v", fieldName))
+		log.Fatalf("Field not found: %v", fieldName)
 	}
 
-	return f.Interface(), nil
+	return f.Interface()
 }
 
-func Set(target Model, fieldName string, val interface{}) error {
+func Set(target Model, fieldName string, val interface{}) {
 	t := reflect.ValueOf(target)
 
 	if !t.IsValid() {
-		return errors.New("Failed reflecting target")
+		log.Fatal("Failed reflecting target")
 	}
 
 	f := reflect.Indirect(t).FieldByName(fieldName)
 
 	if !f.IsValid() {
-		return errors.New(fmt.Sprintf("Field not found: %v", fieldName))
+		log.Fatalf(fmt.Sprintf("Field not found: %v", fieldName))
 	}
 
 	if !f.CanSet() {
-		return errors.New(fmt.Sprintf("Field not settable: %v", fieldName))
+		log.Fatalf(fmt.Sprintf("Field not settable: %v", fieldName))
 	}
 
 	v := reflect.ValueOf(val)
 
 	if !v.IsValid() {
-		return errors.New(fmt.Sprintf("Failed reflecting value: %v", val))
+		log.Fatalf(fmt.Sprintf("Failed reflecting value: %v", val))
 	}
 
 	f.Set(v)
-	return nil
 }
 
 func Load(out Model) error {
@@ -77,11 +78,25 @@ func Load(out Model) error {
 		return errors.Wrapf(err, "Failed loading model: %v/%v", t.Name(), id)
 	}
 
-	if err = t.CopyToModel(*in, out); err != nil {
-		return err
+	t.CopyToModel(*in, out)
+	return nil
+}
+
+func Modified(in Model) bool {
+	t := in.Table()
+	prev, err := t.Load(in.Id())
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	
+	for _, c := range t.columns {
+		if cmp := c.Compare(Get(in, c.Name()), prev.Get(c)); cmp != compare.Eq {
+			return true
+		}
 	}
 
-	return nil
+	return false
 }
 
 func Store(in Model) (Record, error) {
@@ -101,11 +116,6 @@ func Store(in Model) (Record, error) {
 func ToRecord(in Model) (Record, error) {
 	var out Record
 	out.Init(in.Id())
-	t := in.Table()
-	
-	if err := t.CopyFromModel(in, &out); err != nil {
-		return out, err
-	}
-
+	in.Table().CopyFromModel(in, &out)
 	return out, nil
 }

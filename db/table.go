@@ -252,28 +252,16 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 	return out, nil
 }
 
-func (self *Table) CopyFromModel(source Model, target *Record) error {
+func (self *Table) CopyFromModel(source Model, target *Record) {
 	for _, c := range self.columns {
-		v, err := Get(source, c.Name())
-
-		if err != nil {
-			return err
-		}
-		
-		target.Set(c, v)
+		target.Set(c, Get(source, c.Name()))
 	}
-
-	return nil
 }
 
-func (self *Table) CopyToModel(source Record, target Model) error {
+func (self *Table) CopyToModel(source Record, target Model) {
 	for _, c := range self.columns {
-		if err := Set(target, c.Name(), source.Get(c)); err != nil {
-			return err
-		}
+		Set(target, c.Name(), source.Get(c))
 	}
-
-	return nil
 }
 
 func CompareRecordId(x, y RecordId) compare.Order {

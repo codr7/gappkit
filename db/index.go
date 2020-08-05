@@ -233,16 +233,6 @@ func (self Index) find(key IndexKey) (int, bool) {
 	return max, false
 }
 
-func (self *Index) IndexOf(key...interface{}) int {
-	i, ok := self.find(key)
-
-	if !ok {
-		i = -1
-	}
-
-	return i
-}
-
 func (self *Index) Find(key...interface{}) RecordId {
 	i, ok := self.find(key)
 
