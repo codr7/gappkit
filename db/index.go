@@ -114,7 +114,7 @@ func (self *Index) Open(maxTime time.Time) error {
 		}
 
 		if val < 0 {
-			self.remove(key, -val)
+			self.remove(key)
 		} else {
 			self.add(key, val)
 		}
@@ -268,7 +268,7 @@ func (self *Index) Len() int {
 func (self *Index) Remove(record Record) (bool, error) {
 	key := self.Key(record)
 	
-	if !self.remove(key, record.id) {
+	if !self.remove(key) {
 		return false, nil
 	}
 
@@ -287,34 +287,16 @@ func (self *Index) Remove(record Record) (bool, error) {
 	return true, nil
 }
 
-func (self *Index) remove(key IndexKey, value RecordId) bool {
+func (self *Index) remove(key IndexKey) bool {
 	i, ok := self.find(key)	
 
 	if !ok {
 		return false
 	}
 
-	j := i
-	
-	for i > 0 && self.Compare(key, self.items[i-1].key) == compare.Eq {
-		i--
-	}
-
-	len := self.Len()
-
-	for j+1 < len && self.Compare(key, self.items[j+1].key) == compare.Eq {
-		j++
-	}
-
-	for k := i; k <= j; k++ {
-		if self.items[k].value == value {
-			copy(self.items[k:], self.items[k+1:])
-			self.items = self.items[:len-1]	
-			return true
-		}
-	}
-
-	return false
+	copy(self.items[i:], self.items[i+1:])
+	self.items = self.items[:len(self.items)-1]
+	return true
 }
 
 func (self *Index) NewIter(i int) *IndexIter {
