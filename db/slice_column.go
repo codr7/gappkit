@@ -64,6 +64,12 @@ func (self *SliceColumnType) Decode(in *bufio.Reader) (interface{}, error) {
 }
 
 func (self *SliceColumnType) Encode(val interface{}, out io.Writer) error {
+	/*if val == nil {
+		if err := EncodeInt(0, out); err != nil {
+			return err
+		}
+	}*/
+	
 	s := reflect.ValueOf(val)
 	n := s.Len()
 	

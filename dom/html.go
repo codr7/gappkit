@@ -10,6 +10,10 @@ func init() {
 	br.Init("br")
 }
 
+func (self *Node) A(href string, caption string) *Node {
+	return self.NewNode("a").Set("href", href).Append(caption)
+}
+
 func (self *Node) Autofocus() *Node {
 	return self.Set("autofocus", nil)
 }
@@ -71,4 +75,8 @@ func (self *Node) OnClick(spec string, args...interface{}) *Node {
 
 func (self *Node) Readonly() *Node {
 	return self.Set("readonly", nil)
+}
+
+func (self *Node) Ul(id string) *Node {
+	return self.NewNode("ul").Set("id", id).Append("")
 }

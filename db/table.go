@@ -26,6 +26,11 @@ type Table struct {
 	indexes []*Index
 }
 
+type TableIter struct {
+	table *Table
+	id RecordId
+}
+
 func (self *Table) Init(root *Root, name string) *Table {
 	self.root = root
 	self.name = name
@@ -120,6 +125,24 @@ func (self *Table) Close() error {
 	}
 
 	return nil
+}
+
+func (self *Table) First() *TableIter {
+	return &TableIter{table: self, id: 1}
+}
+
+func (self *TableIter) Next() {
+	if self.id <= self.table.nextRecordId {
+		self.id++
+	}
+}
+
+func (self *TableIter) Valid() bool {
+	return self.id <= self.table.nextRecordId
+}
+
+func (self *TableIter) Id() RecordId {
+	return self.id
 }
 
 func (self *Table) Len() int {
@@ -241,7 +264,7 @@ func (self *Table) Load(id RecordId) (*Record, error) {
 		if c, err = DecodeString(dataReader); err != nil {
 			return nil, errors.Wrap(err, "Failed decoding field name")
 		}
-		
+
 		f.Column = self.FindColumn(c)
 
 		if f.Value, err = f.Column.Decode(dataReader); err != nil {
@@ -259,8 +282,8 @@ func (self *Table) CopyFromModel(source Model, target *Record) {
 }
 
 func (self *Table) CopyToModel(source Record, target Model) {
-	for _, c := range self.columns {
-		Set(target, c.Name(), source.Get(c))
+	for _, f := range source.Fields {
+		Set(target, f.Column.Name(), source.Get(f.Column))
 	}
 }
 

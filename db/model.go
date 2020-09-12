@@ -89,6 +89,10 @@ func Modified(in Model) bool {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	if prev == nil {
+		return true
+	}
 	
 	for _, c := range t.columns {
 		if cmp := c.Compare(Get(in, c.Name()), prev.Get(c)); cmp != compare.Eq {
@@ -100,12 +104,8 @@ func Modified(in Model) bool {
 }
 
 func Store(in Model) (Record, error) {
-	out, err := ToRecord(in)
+	out := ToRecord(in)
 
-	if err != nil {
-		return out, err
-	}
-	
 	if err := in.Table().Store(out); err != nil {
 		return out, err
 	}
@@ -113,9 +113,9 @@ func Store(in Model) (Record, error) {
 	return out, nil
 }
 
-func ToRecord(in Model) (Record, error) {
+func ToRecord(in Model) Record {
 	var out Record
 	out.Init(in.Id())
 	in.Table().CopyFromModel(in, &out)
-	return out, nil
+	return out
 }

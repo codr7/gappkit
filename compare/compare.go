@@ -1,7 +1,6 @@
 package compare
 
 import (
-	"strings"
 	"time"
 	"unsafe"
 )
@@ -55,7 +54,15 @@ func Pointer(x, y unsafe.Pointer) Order {
 }
 
 func String(x, y string) Order {
-	return Order(strings.Compare(x, y))
+	if x < y {
+		return Lt
+	}
+
+	if x > y {
+		return Gt
+	}
+	
+	return Eq
 }
 
 func Time(x, y interface{}) Order {
