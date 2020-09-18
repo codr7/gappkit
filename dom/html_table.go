@@ -1,6 +1,6 @@
 package dom
 
-type TableBody struct {
+type Table struct {
 	Node
 }
 
@@ -8,19 +8,23 @@ type TableRow struct {
 	Node
 }
 
-func (self *Node) Table(id string) *TableBody {
-	t := self.NewNode("table").Set("id", id)
-	b := new(TableBody)
-	t.AppendNode(b.Init("tbody"))
-	return b
+func (self *Node) Table(id string) *Table {
+	t := new(Table)
+	t.Append("")
+	self.AppendNode(t.Init("table").Set("id", id))
+	return t
 }
 
-func (self *TableBody) Row() *TableRow {
+func (self *Table) Tr() *TableRow {
 	n := new(TableRow)
 	self.AppendNode(n.Init("tr"))
 	return n
 }
 
-func (self *TableRow) Data() *Node {
+func (self *TableRow) Th() *Node {
+	return self.NewNode("th")
+}
+
+func (self *TableRow) Td() *Node {
 	return self.NewNode("td")
 }

@@ -178,11 +178,9 @@ func (self *Index) add(key IndexKey, value RecordId) bool {
 
 	it := IndexItem{key: key, value: value}
 	len := self.Len()
-	
+
 	if i == len {
 		self.items = append(self.items, it)
-	} else if i == len-1 {
-		self.items = append(self.items[:i], it, self.items[i])
 	} else {
 		self.items = append(self.items, it)
 		copy(self.items[i+1:], self.items[i:])
@@ -245,6 +243,10 @@ func (self *Index) Find(key...interface{}) RecordId {
 
 func (self *Index) First(key...interface{}) *IndexIter {
 	return self.NewIter(0)
+}
+
+func (self *Index) Last(key...interface{}) *IndexIter {
+	return self.NewIter(len(self.items)-1)
 }
 
 func (self *Index) FindLower(key...interface{}) *IndexIter {
